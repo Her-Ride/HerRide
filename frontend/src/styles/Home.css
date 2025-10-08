@@ -1,0 +1,161 @@
+/* font import "aboreto" */
+@import url('https://fonts.googleapis.com/css2?family=Aboreto&display=swap');
+
+/* landing page */
+.landing-page {
+  height: 100vh;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+}
+
+/* header */
+.landing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    background: rgba(255, 255, 255, 0.85);
+  }
+  
+/* logo */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 55px;
+  height: 55px;
+}
+
+.brand-name {
+  font-family: 'Aboreto', cursive;
+  font-size: 22px;
+  font-weight: 500;
+  color: #000;
+  letter-spacing: 0.5px;
+}
+
+/* nav text */
+.nav-links a {
+  font-family: 'Aboreto', cursive;
+  margin: 0 15px;
+  text-decoration: none;
+  font-weight: 500;
+  color: #000;
+  transition: color 0.2s;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 25px; /* Adjust spacing between links and icon */
+    margin-left: auto; /* Push it to the far right */
+  }
+  
+
+.nav-links a:hover {
+  color: #4b144b;
+}
+
+.profile-icon {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* hero/main */
+.landing-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.landing-content h1 {
+  font-family: 'Aboreto', cursive;
+  font-size: 48px;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  line-height: 1.2;
+}
+
+.landing-content p {
+  font-size: 20px;
+  margin-bottom: 30px;
+}
+/* button */
+.button-group {
+  display: flex;
+  gap: 20px;
+}
+
+.primary-btn {
+  background: #4b144b;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.primary-btn:hover {
+  background: #2d0d2d;
+}
+
+.secondary-btn {
+  background: transparent;
+  border: 2px solid white;
+  color: white;
+  padding: 12px 25px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+}
+
+.secondary-btn:hover {
+  background: white;
+  color: #4b144b;
+}
+
+/* works on diff screens */
+@media (max-width: 768px) {
+  .landing-header {
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 20px;
+  }
+
+  .nav-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .landing-content h1 {
+    font-size: 32px;
+  }
+
+  .landing-content p {
+    font-size: 16px;
+  }
+
+  .button-group {
+    flex-direction: column;
+    width: 100%;
+    max-width: 250px;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+  }
+}
