@@ -1,35 +1,37 @@
-import { Routes, Route } from 'react-router-dom';
-import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
-import LoginSignup from './pages/LoginSignup';
-import Rides from './pages/Rides';
-import Messages from './pages/Messages';
-import Profile from './pages/Profile'; 
-import AboutUs from './pages/AboutUs';
-import ContactUs from './pages/ContactUs';
-import LearnMore from './pages/LearnMore';
+import {useEffect, useState} from 'react';
 
-import Header from './components/Header';
-import Footer from './components/Footer';
+interface Ride {
+  id: number;
+  from: string;
+  to: string;
+  time: string;
+}   
+
 
 function App() {
+  const [rides, setRides] = useState<Ride[]>([]);
+
+  useEffect(() => {
+    fetch('/api/rides')
+      .then((response) => response.json())
+      .then((data) => setRides(data))
+      .catch((error) => console.error('Error fetching rides:', error));
+  }, []);
   return (
     <>
-      <Header />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/login" element={<LoginSignup />} />
-        <Route path="/rides" element={<Rides />} />
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/about" element={<AboutUs />} />
-        <Route path="/contact" element={<ContactUs />} />
-        <Route path="/learn-more" element={<LearnMore />} />
-      </Routes>
-      <Footer />
+   <div style = { { padding: "1rem"}}>
+      <h1>HerRide Rides</h1>
+      <h2>Availvable Rides</h2>
+      <ul>
+        {rides.map((ride) => (
+          <li key={ride.id}>
+            {ride.from} to {ride.to} at {ride.time}
+          </li>
+        ))}
+      </ul>
+      </div>
     </>
-  );
+  )
 }
 
-export default App;
+export default App
