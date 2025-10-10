@@ -1,8 +1,13 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/LearnMore.css";
 import background from "../assets/background.png";
 
 const LearnMore: React.FC = () => {
+  const navigate = useNavigate();
+  const handleLoginClick = () => {
+    navigate("/login");
+  };
   return (
     <div
       className="learn-more-page"
@@ -31,7 +36,7 @@ const LearnMore: React.FC = () => {
 
         <div className="ready-box">
           <span>READY?</span>
-          <button className="login-btn">LOG IN</button>
+          <button className="login-btn" onClick={handleLoginClick}>LOG IN</button>
         </div>
       </div>
     </div>
