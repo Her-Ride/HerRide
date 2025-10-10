@@ -1,0 +1,195 @@
+@import url('https://fonts.googleapis.com/css2?family=Aboreto&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+} */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+
+/* landing page */
+.landing-page {
+  height: 100vh;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* hero/main */
+.landing-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.landing-content h1 {
+  font-family: 'Aboreto', cursive;
+  font-size: 48px;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  line-height: 1.2;
+}
+
+.landing-content p {
+  font-size: 20px;
+  margin-bottom: 30px;
+}
+/* button */
+.button-group {
+  display: flex;
+  gap: 20px;
+}
+
+.primary-btn {
+  background: #4b144b;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.primary-btn:hover {
+  background: #2d0d2d;
+}
+
+.secondary-btn {
+  background: transparent;
+  border: 2px solid white;
+  color: white;
+  padding: 12px 25px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+}
+
+.secondary-btn:hover {
+  background: white;
+  color: #4b144b;
+}
+
+/* works on diff screens */
+@media (max-width: 768px) {
+  .landing-content h1 {
+    font-size: 32px;
+  }
+
+  .landing-content p {
+    font-size: 16px;
+  }
+
+  .button-group {
+    flex-direction: column;
+    width: 100%;
+    max-width: 250px;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+  }
+}
+
+/* Learn More Page */
+.learn-more-page {
+    min-height: 100vh;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 20px;
+    color: white;
+  }
+
+.learn-more-container {
+  max-width: 700px;
+  width: 100%;
+  text-align: center;
+}
+
+.learn-more-container h2 {
+  font-family: 'Aboreto', cursive;
+  font-size: 38px;
+  margin-bottom: 40px;
+  letter-spacing: 1px;
+}
+
+.how-box {
+  background: #3a004b;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.how-step h3 {
+  font-family: 'Aboreto', cursive;
+  font-size: 20px;
+  margin-bottom: 5px;
+}
+
+.how-step p {
+    font-family: 'Aboreto', cursive;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.ready-box {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+}
+
+.ready-box span {
+  font-size: 18px;
+  font-family: 'Aboreto', cursive;
+}
+
+.login-btn {
+  background: #4b144b;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  cursor: pointer;
+  font-family: 'Aboreto', cursive;
+  transition: background 0.3s;
+}
+
+.login-btn:hover {
+  background: #2d0d2d;
+}
+
+@media (max-width: 768px) {
+  .how-box {
+    padding: 30px 15px;
+  }
+
+  .how-step p {
+    font-size: 13px;
+  }
+}
