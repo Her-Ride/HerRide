@@ -54,6 +54,13 @@ export default function Header() {
               draggable={false as any}
             />
           </Link>
+          {/* Dissapear when logged in */}
+          <Link
+            href="/login"
+            className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
+          >
+            Log In
+          </Link>
         </div>
       </div>
     </header>
