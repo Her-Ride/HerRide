@@ -111,7 +111,7 @@ export default function DebugMapsPage() {
 		// Switched to using DirectionsService instead of api/maps/directions
 		try {
 			const directionsService = new window.google.maps.DirectionsService();
-			const travelMode = mode.toUpperCase() as google.maps.TravelMode;
+			const travelMode = mode as google.maps.TravelMode;
 			
 			const result = await directionsService.route({
 				origin: origin,
