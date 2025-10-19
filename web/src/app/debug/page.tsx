@@ -3,22 +3,10 @@
 import React, { useState } from "react";
 import { GoogleMap, DirectionsRenderer, useJsApiLoader } from "@react-google-maps/api";
 
-// API response types based on Google Maps API responses
+// based on Google Maps API responses
 type GeocodeResponse = {
 	results: google.maps.GeocoderResult[];
 	status: google.maps.GeocoderStatus;
-} | null;
-
-type ReverseResponse = {
-	results: google.maps.GeocoderResult[];
-	status: google.maps.GeocoderStatus;
-} | null;
-
-type DirectionsResponse = {
-	routes: google.maps.DirectionsRoute[];
-	status: google.maps.DirectionsStatus;
-	request?: google.maps.DirectionsRequest;
-	geocoded_waypoints?: google.maps.DirectionsGeocodedWaypoint[];
 } | null;
 
 export default function DebugMapsPage() {
@@ -27,7 +15,6 @@ export default function DebugMapsPage() {
 		id: 'google-map-script',
 		googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""
 	});
-	const [directionsResult, setDirectionsResult] = useState<google.maps.DirectionsResult | null>(null);
 
 	// Ping
 	const [ping, setPing] = useState<null | { ok: boolean; hasKey: boolean }>(null);
@@ -41,13 +28,13 @@ export default function DebugMapsPage() {
 	// Reverse Geocode
 	const [lat, setLat] = useState("40.7580");
 	const [lng, setLng] = useState("-73.9855");
-	const [reverse, setReverse] = useState<ReverseResponse>(null);
+	const [reverse, setReverse] = useState<GeocodeResponse>(null);
 	const [reverseLoading, setReverseLoading] = useState(false);
 
 	// Directions
 	const [origin, setOrigin] = useState("Times Square, New York, NY");
 	const [destination, setDestination] = useState("Central Park, New York, NY");
-	const [directions, setDirections] = useState<DirectionsResponse>(null);
+	const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
 	const [mode, setMode] = useState<"DRIVING" | "WALKING" | "BICYCLING" | "TRANSIT">("DRIVING");
 	const [dirLoading, setDirLoading] = useState(false);
 
@@ -71,6 +58,9 @@ export default function DebugMapsPage() {
 			lng: location.lng as number
 		};
 	};
+
+	const originCoords = primaryLeg ? getLatLng(primaryLeg.start_location) : null;
+	const destinationCoords = primaryLeg ? getLatLng(primaryLeg.end_location) : null;
 
 	async function doPing() {
 		setPingLoading(true);
@@ -117,38 +107,27 @@ export default function DebugMapsPage() {
 	async function doDirections(e?: React.FormEvent) {
 		e?.preventDefault();
 		setDirLoading(true);
+		
+		// Switched to using DirectionsService instead of api/maps/directions
 		try {
-			const res = await fetch("/api/maps/directions", {
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ origin, destination, mode }),
+			const directionsService = new window.google.maps.DirectionsService();
+			const travelMode = mode.toUpperCase() as google.maps.TravelMode;
+			
+			const result = await directionsService.route({
+				origin: origin,
+				destination: destination,
+				travelMode: travelMode,
 			});
-			const data = await res.json();
-			setDirections(data);
-
-			// Also calculate directions for the map
-			if (isLoaded && window.google) {
-				const directionsService = new window.google.maps.DirectionsService();
-				const travelMode = mode.toUpperCase() as google.maps.TravelMode;
-				
-				try {
-					const result = await directionsService.route({
-						origin: origin,
-						destination: destination,
-						travelMode: travelMode,
-					});
-					setDirectionsResult(result);
-				} catch (error) {
-					console.error("Directions service error:", error);
-					setDirectionsResult(null);
-				}
-			}
+			setDirections(result);
+		} catch (error) {
+			console.error("Directions service error:", error);
+			setDirections(null);
 		} finally {
 			setDirLoading(false);
 		}
 	}
 
-	const embedReady =  Boolean(isLoaded) && origin && destination;
+	const embedReady = Boolean(isLoaded);
 
 	return (
 		<main className="p-6 max-w-6xl mx-auto space-y-10">
@@ -274,8 +253,8 @@ export default function DebugMapsPage() {
 					<div className="text-sm space-y-1">
 						<div><span className="font-semibold">Distance:</span> {primaryLeg.distance?.text}</div>
 						<div><span className="font-semibold">Duration:</span> {primaryLeg.duration?.text}</div>
-						<div className="opacity-70">Start: {primaryLeg.start_address}</div>
-						<div className="opacity-70">End: {primaryLeg.end_address}</div>
+						<div className="opacity-70">Start: {primaryLeg.start_address} ({originCoords && `${originCoords.lat.toFixed(6)}, ${originCoords.lng.toFixed(6)}`})</div>
+						<div className="opacity-70">End: {primaryLeg.end_address} ({destinationCoords && `${destinationCoords.lat.toFixed(6)}, ${destinationCoords.lng.toFixed(6)}`})</div>
 					</div>
 				)}
 				{directions && (
@@ -298,10 +277,10 @@ export default function DebugMapsPage() {
 								mapTypeId: "roadmap" as google.maps.MapTypeId
 							}}
 						>
-							
-							{directionsResult && (
+
+							{directions && (
 								<DirectionsRenderer
-									directions={directionsResult}
+									directions={directions}
 									options={{
 										suppressMarkers: false,
 										suppressInfoWindows: false,
@@ -326,4 +305,3 @@ export default function DebugMapsPage() {
 		</main>
 	);
 }
-
