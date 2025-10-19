@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"; 
+import { GOOGLE_MAPS_API_KEY } from "@/lib/google";
 
 export async function GET(){
-    const hasKey = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const hasKey = !!GOOGLE_MAPS_API_KEY;
     return NextResponse.json({ ok:true, hasKey });
 }
