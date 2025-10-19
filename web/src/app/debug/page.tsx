@@ -111,7 +111,7 @@ export default function DebugMapsPage() {
 		// Switched to using DirectionsService instead of api/maps/directions
 		try {
 			const directionsService = new window.google.maps.DirectionsService();
-			const travelMode = mode.toUpperCase() as google.maps.TravelMode;
+			const travelMode = mode as google.maps.TravelMode;
 			
 			const result = await directionsService.route({
 				origin: origin,
@@ -239,10 +239,10 @@ export default function DebugMapsPage() {
 						value={mode}
 						onChange={(e) => setMode(e.target.value as any)}
 					>
-						<option value="driving">driving</option>
-						<option value="walking">walking</option>
-						<option value="bicycling">bicycling</option>
-						<option value="transit">transit</option>
+						<option value="DRIVING">driving</option>
+						<option value="WALKING">walking</option>
+						<option value="BICYCLING">bicycling</option>
+						<option value="TRANSIT">transit</option>
 					</select>
 					<button className="rounded bg-black text-white px-3 py-2 text-sm" type="submit" disabled={dirLoading}>
 						{dirLoading ? "Requesting…" : "Get Directions JSON"}
