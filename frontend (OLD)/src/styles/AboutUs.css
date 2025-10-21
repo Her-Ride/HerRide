@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Aboreto&display=swap');
+
+.about-img {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 1rem;
+}
+
+.about-container {
+  width: 90%;
+  max-width: 900px;
+  background-color: rgba(0, 0, 0, 0.6); /* subtle dark overlay */
+  color: #fff;
+  padding: 3rem 2rem;
+  border-radius: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
+}
+
+.about-title {
+  font-family: 'Aboreto', cursive;
+  font-size: 2.4rem;
+  margin-bottom: 2.5rem;
+  letter-spacing: 1.5px;
+}
+
+.about-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.about-point {
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+  gap: 1rem;
+}
+
+.about-icon {
+  color: #ffb3c6; /* soft pink tone */
+  flex-shrink: 0;
+  margin-top: 0.5rem;
+}
+
+.about-heading {
+  font-family: 'Aboreto', cursive;
+  font-size: 1.5rem;
+  color: white;
+  margin-bottom: 0.3rem;
+}
+
+.about-point p {
+  font-family: 'Aboreto', cursive;
+  line-height: 1.6;
+  color: #f3f3f3;
+}
+
+@media (max-width: 768px) {
+  .about-container {
+    padding: 2rem 1.5rem;
+  }
+
+  .about-title {
+    font-size: 2rem;
+  }
+
+  .about-heading {
+    font-size: 1.1rem;
+  }
+
+  .about-point {
+    gap: 0.8rem;
+  }
+}
