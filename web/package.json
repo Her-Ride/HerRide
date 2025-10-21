@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@googlemaps/google-maps-services-js": "^3.4.2",
-    "next": "15.5.4",
+    "@next/third-parties": "^15.5.6",
+    "@react-google-maps/api": "^2.20.7",
+    "next": "^15.5.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "zod": "^4.1.12"
