@@ -1,5 +1,8 @@
+import Link from "next/link";
+
 export default function LearnMorePage() {
   return (
+    
     <div
       className="learn-more-page"
       style={{ backgroundImage: 'url(/background.png)' }}
@@ -27,7 +30,11 @@ export default function LearnMorePage() {
 
         <div className="ready-box">
           <span>READY?</span>
-          <button className="login-btn">LOG IN</button>
+          <Link href="/login">
+            <button className="login-btn bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition">
+              LOG IN
+            </button>
+          </Link>
         </div>
       </div>
     </div>
