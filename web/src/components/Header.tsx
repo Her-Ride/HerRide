@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
+import { UserButton, SignInButton, SignUpButton} from "@clerk/nextjs";
 
-export default function Header() {
+export default function Header( { isSignedIn = false }: { isSignedIn: boolean } ) {
   return (
     <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center py-[15px] px-6 md:px-[40px] bg-white/85 backdrop-blur-sm">
       <div className="flex items-center gap-[10px]">
@@ -23,45 +24,55 @@ export default function Header() {
         </Link>
       </div>
       <div className="flex items-center gap-[25px] sm:ml-auto flex-wrap">
-        <nav className="flex items-center flex-wrap">
-          <Link
-            href="/dashboard"
-            className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
-          >
-            Dashboard
-          </Link>
-          <Link
-            href="/rides"
-            className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
-          >
-            My Rides
-          </Link>
-          <Link
-            href="/messages"
-            className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
-          >
-            Messages
-          </Link>
-        </nav>
-        <div className="ml-2">
-          <Link href="/profile" aria-label="Profile" className="inline-block rounded-full">
-            <Image
-              src="/profile_default.png"
-              alt="Profile"
-              width={40}
-              height={40}
-              className="w-10 h-10 rounded-full object-cover border border-black/10"
-              draggable={false as any}
-            />
-          </Link>
-          {/* Dissapear when logged in */}
-          <Link
-            href="/login"
-            className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
-          >
-            Log In
-          </Link>
-        </div>
+        {isSignedIn ? (<>
+          <nav className="flex items-center flex-wrap">
+            <Link
+              href="/dashboard"
+              className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/rides"
+              className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
+            >
+              My Rides
+            </Link>
+            <Link
+              href="/messages"
+              className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
+            >
+              Messages
+            </Link>
+          </nav>
+          <div className="ml-2">
+            {/* <UserButton 
+              userProfileMode="navigation" 
+              userProfileUrl="/profile"
+              appearance={{
+                elements: {
+                  avatarBox: "w-10 h-10 rounded-full border border-black/10"
+                }
+              }}
+            /> */}
+
+            <UserButton />
+
+          </div>  
+        </>) : (<>
+          <nav className="flex items-center flex-wrap">
+            <SignInButton>
+                    <button className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]">
+                      Log In
+                    </button>
+            </SignInButton>
+            <SignUpButton>
+                    <button className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]">
+                      Sign Up
+                    </button>
+            </SignUpButton>
+          </nav>
+        </>)}
       </div>
     </header>
   );
