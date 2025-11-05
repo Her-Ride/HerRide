@@ -16,12 +16,25 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [oldPassword, setOldPassword] = useState("");
   const [about, setAbout] = useState("");
-  const [rating] = useState("4.5/5");
-  const [rides] = useState(6);
-  const [drives] = useState(2);
+
+  // --- NEW: Profile picture ---
+  const [profilePic, setProfilePic] = useState<string | null>(null);
+
+  // --- Stats placeholders (to be filled dynamically later) ---
+  const [rating] = useState<string | null>(null);
+  const [rides] = useState<number | null>(null);
+  const [tier] = useState<string | null>(null); // bronze / gold / platinum (future logic)
 
   const handleUpdate = (section: string) => {
-    alert(`✅ ${section} information updated!`);
+    alert(` ${section} information updated!`);
+  };
+
+  // Handle profile image upload
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfilePic(URL.createObjectURL(file));
+    }
   };
 
   return (
@@ -31,7 +44,7 @@ export default function ProfilePage() {
     >
       <div className="max-w-6xl mx-auto bg-black/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
         <h1 className="font-[Aboreto] text-3xl md:text-4xl mb-8 text-center tracking-wider">
-          Hello, {firstName || "First"}!
+          Hello, {firstName || "Driver"}!
         </h1>
 
         <div className="grid md:grid-cols-2 gap-8">
@@ -73,7 +86,7 @@ export default function ProfilePage() {
                 />
                 <label className="flex items-center gap-2 text-sm mt-2">
                   <input type="checkbox" className="accent-pink-400" />
-                  Share phone with drivers & other passengers
+                  Share phone with drivers & passengers
                 </label>
                 <button
                   onClick={() => handleUpdate("Personal")}
@@ -167,45 +180,76 @@ export default function ProfilePage() {
           {/* ---------- RIGHT SIDE ---------- */}
           <div className="space-y-8">
             {/* About You */}
-            <div className="bg-white/10 rounded-xl p-6 text-center">
-              <h2 className="font-[Aboreto] text-xl text-pink-300 mb-4">
-                About You
-              </h2>
-              <div className="flex flex-col items-center space-y-3">
-                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-                  <span className="text-4xl">👩</span>
-                </div>
-                <input type="file" className="text-sm text-gray-300" />
-                <textarea
-                  placeholder="Tell us about yourself!"
-                  value={about}
-                  onChange={(e) => setAbout(e.target.value)}
-                  className="w-full bg-white/20 p-2 rounded-md text-white placeholder-gray-300 border-none focus:ring-2 focus:ring-pink-400"
-                />
-                <button
-                  onClick={() => handleUpdate("About")}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md font-[Aboreto] hover:opacity-90 transition"
-                >
-                  Update
-                </button>
-              </div>
-            </div>
+<div className="bg-white/10 rounded-xl p-6 text-center">
+  <h2 className="font-[Aboreto] text-xl text-pink-300 mb-4">
+    About You
+  </h2>
+  <div className="flex flex-col items-center space-y-4">
+    {/* Profile picture circle */}
+    <div className="w-24 h-24 bg-white/20 rounded-full overflow-hidden flex items-center justify-center">
+      {profilePic ? (
+        <img
+          src={profilePic}
+          alt="Profile"
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <span className="text-4xl">👩</span>
+      )}
+    </div>
 
-            {/* Stats */}
+    {/* Custom upload button */}
+    <label
+      htmlFor="profile-upload"
+      className="cursor-pointer text-pink-300 hover:text-pink-400 font-[Aboreto] transition"
+    >
+      Upload your profile pic 📁
+    </label>
+    <input
+      id="profile-upload"
+      type="file"
+      accept="image/*"
+      onChange={handleImageUpload}
+      className="hidden"
+    />
+
+    <textarea
+      placeholder="Tell us about yourself!"
+      value={about}
+      onChange={(e) => setAbout(e.target.value)}
+      className="w-full bg-white/20 p-2 rounded-md text-white placeholder-gray-300 border-none focus:ring-2 focus:ring-pink-400"
+    />
+    <button
+      onClick={() => handleUpdate("About")}
+      className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md font-[Aboreto] hover:opacity-90 transition"
+    >
+      Update
+    </button>
+  </div>
+</div>
+
+
+            {/* Stats (empty placeholders for now) */}
             <div className="bg-white/10 rounded-xl p-6 text-center">
               <h2 className="font-[Aboreto] text-xl text-pink-300 mb-4">Stats</h2>
               <div className="flex justify-around text-gray-200 mb-4">
                 <div>
-                  <p className="text-2xl text-yellow-400 font-bold">{rating}</p>
+                  <p className="text-2xl text-yellow-400 font-bold">
+                    {rating || "--"}
+                  </p>
                   <p>Rating</p>
                 </div>
                 <div>
-                  <p className="text-2xl text-pink-400 font-bold">{rides}</p>
+                  <p className="text-2xl text-pink-400 font-bold">
+                    {rides || "--"}
+                  </p>
                   <p>Rides</p>
                 </div>
                 <div>
-                  <p className="text-2xl text-purple-400 font-bold">{drives}</p>
-                  <p>Rides Driven</p>
+                  <p className="text-2xl text-purple-400 font-bold">
+                    {tier || "--"}
+                  </p>
+                  <p>Driver Tier</p>
                 </div>
               </div>
               <button className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md font-[Aboreto] hover:opacity-90 transition">

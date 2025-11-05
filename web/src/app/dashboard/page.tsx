@@ -31,7 +31,7 @@ export default function DashboardPage() {
       {/* Main card */}
       <div className="w-[90%] max-w-5xl bg-black/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
         <h1 className="font-[Aboreto] text-3xl md:text-4xl mb-8 text-center tracking-wider">
-          PLAN A RIDE
+          HerRide Dashboard 
         </h1>
 
         <div className="grid md:grid-cols-2 gap-8">
