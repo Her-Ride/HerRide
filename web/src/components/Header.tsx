@@ -44,6 +44,13 @@ export default function Header( { isSignedIn = false }: { isSignedIn: boolean } 
             >
               Messages
             </Link>
+            {/* 🆕 Added Profile link */}
+            <Link
+                href="/profile"
+                className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
+              >
+                Profile
+              </Link>
           </nav>
           <div className="ml-2">
             {/* <UserButton 
