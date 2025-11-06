@@ -137,8 +137,3 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-
-
-# Ignore local environment keys
-.env.local
-.env.*.local
