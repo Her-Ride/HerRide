@@ -46,7 +46,7 @@ export default function Header( { isSignedIn = false }: { isSignedIn: boolean } 
             </Link>
           </nav>
           <div className="ml-2">
-            {/* <UserButton 
+            <UserButton 
               userProfileMode="navigation" 
               userProfileUrl="/profile"
               appearance={{
@@ -54,9 +54,7 @@ export default function Header( { isSignedIn = false }: { isSignedIn: boolean } 
                   avatarBox: "w-10 h-10 rounded-full border border-black/10"
                 }
               }}
-            /> */}
-
-            <UserButton />
+            /> 
 
           </div>  
         </>) : (<>
