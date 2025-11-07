@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { UserProfile } from "@clerk/nextjs";
 
 export default function ProfilePage() {
   // --- STATE MANAGEMENT ---
@@ -259,6 +260,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+      <UserProfile />
     </div>
   );
 }

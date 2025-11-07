@@ -15,10 +15,7 @@ export default function Home() {
 
         <div className="button-group flex justify-center gap-6 mt-8">
           {/* PLAN A RIDE button (no action yet) */}
-          <button
-            className="primary-btn bg-purple-900 text-white px-8 py-3 rounded-md font-[Aboreto] hover:opacity-90 transition"
-            onClick={() => {}} // does nothing for now
-          >
+          <button className="primary-btn">
             PLAN A RIDE
           </button>
 
