@@ -30,13 +30,13 @@ CREATE POLICY "Users can view all profiles"
 create policy "Users can insert own profile"
   on public.users for insert
   to authenticated
-  with check ((select auth.jwt()->>'sub') = (clerk_id)::text);
+  with check ((select auth.jwt()->>'sub') = clerk_id);
 
 create policy "Users can update own profile"
   on public.users for update
   to authenticated
-  using ((select auth.jwt()->>'sub') = (clerk_id)::text)
-  with check ((select auth.jwt()->>'sub') = (clerk_id)::text);
+  using ((select auth.jwt()->>'sub') = clerk_id)
+  with check ((select auth.jwt()->>'sub') = clerk_id);
 
 -- DEV-ONLY: Allow anonymous inserts to simplify local testing when a Supabase
 -- session cookie has not been established yet. REMOVE before production.
