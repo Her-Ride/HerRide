@@ -2,6 +2,12 @@
 
 import React, { useState } from "react";
 import { MapPin, Calendar, CarFront } from "lucide-react";
+import Map from "@/components/Map";
+
+type LatLng = {
+  lat: number;
+  lng: number;
+};
 
 export default function DashboardPage() {
   const [pickup, setPickup] = useState("");
@@ -9,6 +15,9 @@ export default function DashboardPage() {
   const [dateTime, setDateTime] = useState("");
   const [seats, setSeats] = useState("");
   const [rides, setRides] = useState<any[]>([]);
+
+  const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +31,42 @@ export default function DashboardPage() {
 
     alert("Ride request created!");
   };
+  const handleShowDestinationOnMap = async () => {
+  if (!destination) {
+    alert("Enter a destination first.");
+    return;
+  }
+
+  try {
+    setIsLocating(true);
+
+    const res = await fetch(
+      `/api/maps/geocode?address=${encodeURIComponent(destination)}`
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Geocode error:", data);
+      alert("Unable to locate destination.");
+      return;
+    }
+
+    const loc = data?.results?.[0]?.geometry?.location;
+
+    if (!loc) {
+      alert("No location found for that address.");
+      return;
+    }
+
+    setMapCenter({ lat: loc.lat, lng: loc.lng });
+  } catch (err) {
+    console.error(err);
+    alert("Something went wrong looking up that address.");
+  } finally {
+    setIsLocating(false);
+  }
+};
 
   return (
     <div
@@ -124,33 +169,36 @@ export default function DashboardPage() {
             </button>
           </form>
 
-          {/* Right side: Browse Rides with map */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-lg">
-            <h2 className="font-[Aboreto] text-2xl text-pink-300 mb-3">
-              Browse Rides
-            </h2>
+              {/* Right side: Browse Rides with map */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-lg">
+              <h2 className="font-[Aboreto] text-2xl text-pink-300 mb-3">
+               Browse Rides
+              </h2>
 
-            <input
+              <input
               type="text"
-              placeholder="Enter destination to browse rides"
-              className="w-full bg-white/20 text-white placeholder-gray-300 p-2 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-pink-400"
-            />
+                placeholder="Enter destination to browse rides"
+                className="w-full bg-white/20 text-white placeholder-gray-300 p-2 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+              />
 
-            <div className="w-full h-64 rounded-xl overflow-hidden">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3021.911955769263!2d-73.996864!3d40.730610!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c259af2ae3b5f9%3A0xf4b3c3947e6a6e0f!2sManhattan%2C%20NY!5e0!3m2!1sen!2sus!4v1688948899999!5m2!1sen!2sus"
-                width="100%"
-                height="100%"
-                loading="lazy"
-                className="border-none"
-              ></iframe>
+              <button
+                type="button"
+                onClick={handleShowDestinationOnMap}
+                disabled={isLocating}
+                className="w-full mb-4 bg-white/20 text-white text-sm py-2 rounded-md hover:bg-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition"
+              >
+                {isLocating ? "Locating..." : "Show destination on map"}
+              </button>
+
+              {/* Map area */}
+              <Map center={mapCenter || undefined} />
+
+              <button className="w-full mt-4 bg-gradient-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition">
+                Browse Rides
+              </button>
             </div>
-
-            <button className="w-full mt-4 bg-gradient-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition">
-              Browse Rides
-            </button>
-          </div>
-        </div>
 
         {/* Show submitted rides */}
         {rides.length > 0 && (
@@ -183,5 +231,6 @@ export default function DashboardPage() {
         )}
       </div>
     </div>
+  </div>
   );
 }
