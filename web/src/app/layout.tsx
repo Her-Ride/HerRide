@@ -7,6 +7,7 @@ import {
 import { Aboreto, Inter } from 'next/font/google'
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import CreateUser from "@/components/CreateUser";
 import './globals.css'
 
 const aboreto = Aboreto({
@@ -41,6 +42,7 @@ export default function RootLayout({
             <Header isSignedIn={false} />
           </SignedOut>
           <SignedIn>
+            <CreateUser />
             <Header isSignedIn={true} />
           </SignedIn>
           {children}
