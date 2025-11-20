@@ -16,16 +16,14 @@ export async function POST() {
       user.primaryEmailAddress?.emailAddress ??
       user.emailAddresses?.[0]?.emailAddress
 
-    const { data, error } = await supabase
+    const { error: insertError } = await supabase
       .from('users')
       .insert({ first_name, last_name, email })
-      .select('clerk_id, first_name, last_name, email, created_at')
-      .single()
 
-    if (error)
-      return NextResponse.json({ error: error.message }, { status: 400 })
+    if (insertError)
+      return NextResponse.json({ error: insertError.message }, { status: 400 })
 
-    return NextResponse.json({ user: data })
+    return NextResponse.json({ status: 200 })
   } catch (e: any) {
     return NextResponse.json(
       { error: e?.message || 'Failed to create user' },

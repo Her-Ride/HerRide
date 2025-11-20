@@ -9,6 +9,7 @@ import { useUser } from "@clerk/nextjs";
 export default function CreateUser() {
   const { isSignedIn, user, isLoaded } = useUser();
   const ranRef = useRef(false);
+  const version = "1";
 
   useEffect(() => {
     if (!isSignedIn || !user || !isLoaded) return;
@@ -17,13 +18,13 @@ export default function CreateUser() {
     if (ranRef.current) return;
     ranRef.current = true;
 
-    const key = `dbUserSynced:${user.id}`;
+    const key = `dbUserSynced:${user.id}:${version}`;
     const alreadySynced = typeof window !== "undefined" && localStorage.getItem(key) === "true";
     if (alreadySynced) return;
     
     (async () => {
       try {
-        const res = await fetch("/api/db/users/newuser", { method: "POST" });
+        const res = await fetch("/api/users/newuser", { method: "POST" });
         if (res.ok) {
           localStorage.setItem(key, "true");
         } else {
@@ -41,5 +42,6 @@ export default function CreateUser() {
     })();
   }, [isLoaded, isSignedIn, user]);
 
+  // Future idea: Add modal for new users 
   return null;
 }

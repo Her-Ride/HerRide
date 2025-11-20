@@ -1,54 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { createClient } from "@supabase/supabase-js";
-import { Users } from "lucide-react";
-
-// Server-side Supabase client using service role key
-function getSupabaseServerClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const serviceKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-  if (!url || !serviceKey) {
-    throw new Error("Supabase env vars are missing");
-  }
-
-  return createClient(url, serviceKey);
-}
+import { currentUser } from '@clerk/nextjs/server'
+import { createServerSupabaseClient } from '@/lib/supabase/client'
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
+    const user = await currentUser()
+    if (!user)
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     
     const body = await req.json();
     const {
       pickupAddress,
       destinationAddress,
       seats,
-      dateTime,        
       destinationLat,
       destinationLng,
     } = body;
 
-    if (!pickupAddress || !destinationAddress || !dateTime) {
+    if (!pickupAddress || !destinationAddress) {
       return NextResponse.json(
         {
           error:
-            "pickupAddress, destinationAddress, and dateTime are required",
+            "pickupAddress, destinationAddress are required",
           received: body,
         },
         { status: 400 }
       );
     }
 
-    const supabase = getSupabaseServerClient();
+    const supabase = createServerSupabaseClient()
 
     const { data: ride, error: rideError } = await supabase
       .from("rides")
@@ -60,7 +40,6 @@ export async function POST(req: NextRequest) {
         destination_lat: destinationLat ?? null,
         destination_lng: destinationLng ?? null,
         
-        created_at: new Date(dateTime).toISOString(),
       })
       .select()
       .single();
@@ -79,7 +58,7 @@ export async function POST(req: NextRequest) {
       .from("rider_rides")
       .insert({
         ride_id: ride.id,
-        rider_id: userId,
+        rider_id: user.id,
       });
 
     if (linkError) {

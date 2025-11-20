@@ -12,7 +12,7 @@ type LatLng = {
 export default function DashboardPage() {
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
-  const [dateTime, setDateTime] = useState("");
+  const [destinationBrowse, setDestinationBrowse] = useState("");
   const [seats, setSeats] = useState("");
   const [rides, setRides] = useState<any[]>([]);
 
@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
-  if (!pickup || !destination || !dateTime) {
+  if (!pickup || !destination) {
     alert("Please fill all required fields.");
     return;
   }
@@ -32,14 +32,13 @@ export default function DashboardPage() {
     setSubmitting(true);
 
     
-    const res = await fetch("/api/rides", {
+    const res = await fetch("/api/rides/newride", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         pickupAddress: pickup,
         destinationAddress: destination,
         seats: seats ? Number(seats) : null,
-        dateTime, // datetime-local string
         destinationLat: mapCenter?.lat ?? null,
         destinationLng: mapCenter?.lng ?? null,
       }),
@@ -54,12 +53,11 @@ export default function DashboardPage() {
     }
 
     
-    const newRide = { id: Date.now(), pickup, destination, dateTime, seats };
+    const newRide = { id: Date.now(), pickup, destination, seats };
     setRides((prev) => [...prev, newRide]);
 
     setPickup("");
     setDestination("");
-    setDateTime("");
     setSeats("");
 
     alert("Ride request created!");
@@ -203,8 +201,8 @@ const handleShowDestinationOnMap = async () => {
               type="text"
                 placeholder="Enter destination to browse rides"
                 className="w-full bg-white/20 text-white placeholder-gray-300 p-2 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
+                value={destinationBrowse}
+                onChange={(e) => setDestinationBrowse(e.target.value)}
               />
 
               <button
@@ -241,9 +239,6 @@ const handleShowDestinationOnMap = async () => {
                   </p>
                   <p>
                     <strong>To:</strong> {ride.destination}
-                  </p>
-                  <p>
-                    <strong>Date:</strong> {ride.dateTime}
                   </p>
                   <p>
                     <strong>Seats:</strong> {ride.seats}
