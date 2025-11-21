@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { currentUser } from '@clerk/nextjs/server'
 import { createServerSupabaseClient } from '@/lib/supabase/client'
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const user = await currentUser()
     if (!user)
