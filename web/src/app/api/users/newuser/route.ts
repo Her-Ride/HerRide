@@ -16,9 +16,10 @@ export async function POST() {
             user.primaryEmailAddress?.emailAddress ??
             user.emailAddresses?.[0]?.emailAddress
 
+        const profile_img_url = user.imageUrl
         const { error } = await supabase
             .from('users')
-            .insert({ first_name, last_name, email })
+            .insert({ first_name, last_name, email, profile_img_url })
 
         if (error)
             return NextResponse.json({ error: error?.message }, { status: 400 })

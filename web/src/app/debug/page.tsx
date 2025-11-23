@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { GoogleMap, DirectionsRenderer, useJsApiLoader } from "@react-google-maps/api";
+import { useUser } from "@clerk/nextjs";
 
 // based on Google Maps API responses
 type GeocodeResponse = {
@@ -10,6 +11,10 @@ type GeocodeResponse = {
 } | null;
 
 export default function DebugMapsPage() {
+	// User information
+	const { user } = useUser();
+	const imageUrl = user?.imageUrl || null;
+
 	// Load Google Maps API
 	const { isLoaded } = useJsApiLoader({
 		id: 'google-map-script',
@@ -302,6 +307,21 @@ export default function DebugMapsPage() {
 					<li>Latitude and longtitude is used for mapping directions, and optionally to get detailed addresses</li>
 				</ul>
 			</section>
+
+			<section className="space-y-2">
+				<h2 className="text-xl font-semibold">Clerk test</h2>
+				{imageUrl && (
+				<div className="mt-4">
+					<h3 className="text-lg font-semibold">Profile Image</h3>
+					<img src={imageUrl} alt="Profile" className="w-32 h-32 rounded-full object-cover" />
+				</div>
+				)}
+				<h3 className="text-lg font-semibold">Username</h3>
+				<p>{user?.username || "No username set"}</p>
+
+			</section>
+
+
 		</main>
 	);
 }
