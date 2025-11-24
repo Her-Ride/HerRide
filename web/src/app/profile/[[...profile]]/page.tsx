@@ -251,6 +251,7 @@ export default function ProfilePage() {
       className="min-h-screen bg-cover bg-center bg-no-repeat px-4 py-12"
       style={{ backgroundImage: "url(/background.png)" }}
     >
+      {/* Pop ups for email and errors */}
       {isError && (
         <div className="max-w-6xl mx-auto mt-6 bg-red-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl ">
           <div className="flex justify-between items-start gap-4">
@@ -268,7 +269,6 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-      {/* Success message */}
       {successful && (
         <div className="max-w-6xl mx-auto mt-6 bg-green-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
           <div className="flex justify-between items-start gap-4">
@@ -284,7 +284,6 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-      {/* Verification prompt */}
       {isVerifying && !successful && emailObj && (
         <div className="max-w-6xl mx-auto mt-6 bg-pink-900/50 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
           <div className="flex justify-between items-start gap-4">
@@ -328,6 +327,7 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+      {/* Main profile container */}
       <div className="max-w-6xl mx-auto bg-black/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
         <h1 className="font-[Aboreto] text-3xl md:text-4xl mb-8 text-center tracking-wider">
           Hello, {firstName || "Driver"}!
