@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useReverification } from "@clerk/nextjs";
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 
@@ -18,17 +18,23 @@ export default function ProfilePage() {
   const [profilePic, setProfilePic] = useState<string>("/profile.png");
   const [make, setMake] = useState<string>("");
   const [model, setModel] = useState<string>("");
-  const [year, setYear] = useState<number>(0);
+   const [year, setYear] = useState<string>("");
   const [color, setColor] = useState<string>("");
   const [plate, setPlate] = useState<string>("");
-  const [seats, setSeats] = useState<number>(0);
+   const [seats, setSeats] = useState<string>("");
 
   // State
   const [username, setUsername] = useState<string>("");
-  const [newPassword, setNewPassword] = useState("");
-  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState<string>();
+  const [oldPassword, setOldPassword] = useState<string>();
   const [isError, setIsError] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>();
+  const [updating, setUpdating] = useState<Record<string, boolean>>({});
+  // States for email
+  const [code, setCode] = useState<string>("");
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [successful, setSuccessful] = useState<boolean>(false);
+  const [emailObj, setEmailObj] = useState<any | undefined>();
 
   // Get info from Supabase
   useEffect(() => {
@@ -55,10 +61,10 @@ export default function ProfilePage() {
         if (u.profile_img_url) setProfilePic(u.profile_img_url);
         setMake(u.vehicle_make || '');
         setModel(u.vehicle_model || '');
-        setYear(u.vehicle_year ? Number(u.vehicle_year) : 0);
+        setYear(u.vehicle_year && Number(u.vehicle_year) > 0 ? String(u.vehicle_year) : "");
         setColor(u.vehicle_color || '');
         setPlate(u.license_plate_number || '');
-        setSeats(u.seats_available ? Number(u.seats_available) : 0);
+        setSeats(u.seats_available && Number(u.seats_available) > 0 ? String(u.seats_available) : "");
       } catch (e: any) {
         setIsError(true);
         setErrorMessage(e?.message || 'Error fetching user');
@@ -77,15 +83,166 @@ export default function ProfilePage() {
     if (profilePic === '/profile.png') setProfilePic(user.imageUrl);
   }, [user]);
 
-  const handleUpdate = (section: string) => {
-    alert(` ${section} information updated!`);
+  const createEmailAddress = useReverification((email: string) =>
+    user?.createEmailAddress({ email }),
+  );
+  const updateEmailAddress = useReverification((primaryEmailAddressId: string) =>
+    user?.update({ primaryEmailAddressId }),
+  );
+  const handleUpdate = async (section: string) => {
+    try {
+      let payload: Record<string, any> = {};
+      switch (section) {
+        case 'Personal':
+          if (middleInitial && middleInitial.length > 1) {
+            setIsError(true); setErrorMessage('Middle initial must be one character'); return;
+          }
+          if (user) {
+            const currentEmail = user.primaryEmailAddress?.emailAddress;
+            if (email && currentEmail && email !== currentEmail) {
+              try {
+                // If the typed email already exists on the account, reuse it instead of creating
+                const existing = user.emailAddresses.find(a => a.emailAddress?.toLowerCase() === email.toLowerCase());
+                if (existing) {
+                  if (existing.verification?.status === 'verified') {
+                    await updateEmailAddress( existing.id );
+                    await user.reload();
+                    setEmail(existing.emailAddress);
+                  } else {
+                    // Re-send a code and show verify UI
+                    setEmailObj(existing);
+                    await existing.prepareVerification({ strategy: 'email_code' });
+                    setIsVerifying(true);
+                  }
+                } else {
+                  const newEmail = await createEmailAddress(email);
+                  await user.reload();
+                  const emailAddress = user.emailAddresses.find((a) => a.id === newEmail?.id);
+                  if (emailAddress) {
+                    setEmailObj(emailAddress);
+                    setEmail(currentEmail);
+                    emailAddress.prepareVerification({ strategy: 'email_code' });
+                    setIsVerifying(true);
+                  }
+                }
+              } catch (err: any) {
+                setIsError(true);
+                setErrorMessage(err?.message || 'Failed initiating Clerk email change');
+                return; 
+              }
+            }
+          }
+          payload = {
+            first_name: firstName,
+            last_name: lastName,
+            middle_initial: middleInitial,
+            email,
+            phone_number: phone,
+            share_phone: sharePhone,
+            share_email: shareEmail,
+          };
+          console.log(payload)
+          break;
+        case 'Vehicle':
+          if (year !== '' && !(Number(year) > 1000 && Number(year) < 9999)) { setIsError(true); setErrorMessage('Invalid year'); return; }
+          if (seats !== '' && Number(seats) < 0) { setIsError(true); setErrorMessage('Seats cannot be negative'); return; }
+          payload = {
+            vehicle_make: make,
+            vehicle_model: model,
+            vehicle_year: year === '' ? null : Number(year),
+            vehicle_color: color,
+            license_plate_number: plate,
+            seats_available: seats === '' ? 0 : Number(seats),
+          };
+          break;
+        case 'About':
+          payload = { 
+            bio,
+          };
+          break;
+        case 'Security':
+          alert('Soon');
+          return;
+        default:
+          return;
+      }
+
+      setUpdating(prev => ({ ...prev, [section]: true }));
+
+      const res = await fetch('/api/users/update', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setIsError(true);
+        setErrorMessage(json?.error || 'Failed to update');
+      } else {
+        setSuccessful(true);
+      }
+    } catch (e: any) {
+      setIsError(true);
+      setErrorMessage(e?.message || 'Update error');
+    } finally {
+      setUpdating(prev => ({ ...prev, [section]: false }));
+    }
   };
 
+
   // Handle profile image upload
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setProfilePic(URL.createObjectURL(file));
+    if (!file) return;
+    if (!user) { setIsError(true); setErrorMessage('Must be signed in'); return; }
+    try {
+      await user.setProfileImage({ file });
+      await user.reload();
+      const newUrl = user.imageUrl;
+      if (newUrl) setProfilePic(newUrl);
+      // Mirror URL into Supabase profile table
+      await fetch('/api/users/update', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile_img_url: newUrl }),
+      });
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err?.message || 'Failed to update profile image');
+    }
+  };
+
+  // Verification helpers
+  const verifyEmailCode = async () => {
+    if (!user || !emailObj) return;
+    try {
+      const attempt = await emailObj.attemptVerification({ code });
+      if (attempt?.verification.status === 'verified') {
+        // Make primary & persist
+        await user.update({ primaryEmailAddressId: emailObj.id });
+        await user.reload();
+        setEmail(emailObj.emailAddress);
+        await fetch('/api/users/update', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailObj.emailAddress }),
+        });
+        setSuccessful(true);
+        setIsVerifying(false);
+        setCode('');
+      } else {
+        setIsError(true); setErrorMessage('Invalid or expired code.');
+      }
+    } catch (err: any) {
+      setIsError(true); setErrorMessage(err?.message || 'Verification error');
+    }
+  };
+
+  const resendVerificationCode = async () => {
+    try {
+      await emailObj?.prepareVerification({ strategy: 'email_code' });
+    } catch (err: any) {
+      setIsError(true); setErrorMessage(err?.message || 'Failed to resend code');
     }
   };
 
@@ -94,6 +251,83 @@ export default function ProfilePage() {
       className="min-h-screen bg-cover bg-center bg-no-repeat px-4 py-12"
       style={{ backgroundImage: "url(/background.png)" }}
     >
+      {isError && (
+        <div className="max-w-6xl mx-auto mt-6 bg-red-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl ">
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <p className="font-semibold">Error</p>
+              <p className="text-sm">{errorMessage}</p>
+            </div>
+            <button
+              onClick={() => { setIsError(false); setErrorMessage(''); }}
+              className="text-white/80 hover:text-white"
+              aria-label="Dismiss error"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Success message */}
+      {successful && (
+        <div className="max-w-6xl mx-auto mt-6 bg-green-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <p className="font-semibold">Info updated!</p>
+              <p className="text-sm">Your information has been updated.</p>
+            </div>
+            <button
+              onClick={() => { setSuccessful(false); setEmailObj(undefined); }}
+              className="text-white/80 hover:text-white text-lg leading-none"
+              aria-label="Dismiss success"
+            >✕</button>
+          </div>
+        </div>
+      )}
+      {/* Verification prompt */}
+      {isVerifying && !successful && emailObj && (
+        <div className="max-w-6xl mx-auto mt-6 bg-pink-900/50 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
+          <div className="flex justify-between items-start gap-4">
+            <div className="w-full space-y-4">
+              <p className="font-semibold">Verify new email</p>
+              <p className="text-xs text-white/70">Enter the code sent to <span className="text-pink-200">{emailObj.emailAddress}</span>.</p>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Verification code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.trim())}
+                  className="w-full bg-white/20 p-2 rounded-md placeholder-gray-300 focus:ring-2 focus:ring-pink-400 border-none"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={verifyEmailCode}
+                    disabled={code.length === 0}
+                    className="flex-1 min-w-[110px] bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md font-[Aboreto] disabled:opacity-50"
+                  >Verify</button>
+                  <button
+                    type="button"
+                    onClick={resendVerificationCode}
+                    className="px-3 py-2 bg-white/20 rounded-md text-sm hover:bg-white/30"
+                  >Resend</button>
+                  <button
+                    type="button"
+                    onClick={() => { setIsVerifying(false); setCode(''); setEmailObj(undefined); }}
+                    className="px-3 py-2 bg-white/10 rounded-md text-sm hover:bg-white/20"
+                  >Cancel</button>
+                </div>
+                <p className="text-[10px] text-white/50">Primary email updates only after successful verification.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => { setIsVerifying(false); setCode(''); setEmailObj(undefined); }}
+              className="text-white/80 hover:text-white text-lg leading-none"
+              aria-label="Close verification"
+            >✕</button>
+          </div>
+        </div>
+      )}
       <div className="max-w-6xl mx-auto bg-black/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
         <h1 className="font-[Aboreto] text-3xl md:text-4xl mb-8 text-center tracking-wider">
           Hello, {firstName || "Driver"}!
@@ -164,9 +398,10 @@ export default function ProfilePage() {
                 </label>
                 <button
                   onClick={() => handleUpdate("Personal")}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md mt-2 font-[Aboreto] hover:opacity-90 transition"
+                  disabled={!!updating['Personal']}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md mt-2 font-[Aboreto] hover:opacity-90 transition disabled:opacity-60"
                 >
-                  Update
+                  {updating['Personal'] ? 'Updating…' : 'Update'}
                 </button>
               </div>
             </div>
@@ -202,17 +437,17 @@ export default function ProfilePage() {
                     className="w-full bg-white/20 p-2 rounded-md placeholder-gray-300 focus:ring-2 focus:ring-pink-400 border-none"
                   />
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="Year"
                     value={year}
                     onChange={(e) => {
-                      if (e.target.value === "") {
-                        setYear(0);
-                      } else  {
-                        const n = parseInt(e.target.value, 10);
-                        if (n > 1000 && n < 9999) {
-                          setYear(n);
-                        }
+                      const v = e.target.value;
+                      if (v === '') {
+                        setYear('');
+                      } else if (/^[0-9]{0,4}$/.test(v)) {
+                        setYear(v);
                       }
                     }}
                     className="w-full bg-white/20 p-2 rounded-md placeholder-gray-300 focus:ring-2 focus:ring-pink-400 border-none"
@@ -226,26 +461,27 @@ export default function ProfilePage() {
                   className="w-full bg-white/20 p-2 rounded-md placeholder-gray-300 focus:ring-2 focus:ring-pink-400 border-none"
                 />
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="Available Seats"
                   value={seats}
                   onChange={(e) => {
-                    if (e.target.value === "") {
-                      setSeats(0);
-                    } else  {
-                      const n = parseInt(e.target.value, 10);
-                      if (n >= 0) {
-                        setSeats(n);
-                      }
+                    const v = e.target.value;
+                    if (v === '') {
+                      setSeats('');
+                    } else if (/^[0-9]*$/.test(v)) {
+                      setSeats(v);
                     }
                   }}
                   className="w-full bg-white/20 p-2 rounded-md placeholder-gray-300 focus:ring-2 focus:ring-pink-400 border-none"
                 />
                 <button
                   onClick={() => handleUpdate("Vehicle")}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md mt-2 font-[Aboreto] hover:opacity-90 transition"
+                  disabled={!!updating['Vehicle']}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md mt-2 font-[Aboreto] hover:opacity-90 transition disabled:opacity-60"
                 >
-                  Update
+                  {updating['Vehicle'] ? 'Updating…' : 'Update'}
                 </button>
               </div>
             </div>
@@ -333,9 +569,10 @@ export default function ProfilePage() {
                 />
                 <button
                   onClick={() => handleUpdate("About")}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md font-[Aboreto] hover:opacity-90 transition"
+                  disabled={!!updating['About']}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md font-[Aboreto] hover:opacity-90 transition disabled:opacity-60"
                 >
-                  Update
+                  {updating['About'] ? 'Updating…' : 'Update'}
                 </button>
               </div>
             </div>
@@ -369,23 +606,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {isError && (
-        <div className="max-w-6xl mx-auto mt-6 bg-red-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl ">
-          <div className="flex justify-between items-start gap-4">
-            <div>
-              <p className="font-semibold">Error</p>
-              <p className="text-sm">{errorMessage}</p>
-            </div>
-            <button
-              onClick={() => { setIsError(false); setErrorMessage(''); }}
-              className="text-white/80 hover:text-white"
-              aria-label="Dismiss error"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
