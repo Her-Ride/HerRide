@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { UpdateUserParams, UpdateUserPasswordParams } from "@clerk/types";
 import { useUser, useReverification } from "@clerk/nextjs";
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
@@ -18,15 +19,15 @@ export default function ProfilePage() {
   const [profilePic, setProfilePic] = useState<string>("/profile.png");
   const [make, setMake] = useState<string>("");
   const [model, setModel] = useState<string>("");
-   const [year, setYear] = useState<string>("");
+  const [year, setYear] = useState<string>("");
   const [color, setColor] = useState<string>("");
   const [plate, setPlate] = useState<string>("");
-   const [seats, setSeats] = useState<string>("");
+  const [seats, setSeats] = useState<string>("");
 
   // State
   const [username, setUsername] = useState<string>("");
-  const [newPassword, setNewPassword] = useState<string>();
-  const [oldPassword, setOldPassword] = useState<string>();
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>();
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
@@ -86,12 +87,16 @@ export default function ProfilePage() {
   const createEmailAddress = useReverification((email: string) =>
     user?.createEmailAddress({ email }),
   );
-  const updateEmailAddress = useReverification((primaryEmailAddressId: string) =>
-    user?.update({ primaryEmailAddressId }),
+  const update = useReverification((fields: UpdateUserParams) => 
+    user?.update(fields)
+  );
+  const updatePassword = useReverification((fields: UpdateUserPasswordParams) =>
+    user?.updatePassword(fields)
   );
   const handleUpdate = async (section: string) => {
     try {
       let payload: Record<string, any> = {};
+      setUpdating(prev => ({ ...prev, [section]: true }));
       switch (section) {
         case 'Personal':
           if (middleInitial && middleInitial.length > 1) {
@@ -105,7 +110,7 @@ export default function ProfilePage() {
                 const existing = user.emailAddresses.find(a => a.emailAddress?.toLowerCase() === email.toLowerCase());
                 if (existing) {
                   if (existing.verification?.status === 'verified') {
-                    await updateEmailAddress( existing.id );
+                    await update({ primaryEmailAddressId: existing.id });
                     await user.reload();
                     setEmail(existing.emailAddress);
                   } else {
@@ -161,25 +166,52 @@ export default function ProfilePage() {
           };
           break;
         case 'Security':
-          alert('Soon');
-          return;
+          if (!user) { setIsError(true); setErrorMessage('Not signed in'); return; }
+          setUsername(username.trim());
+          const currentUsername = user.username || '';
+          const wantsUsernameChange = username && username !== currentUsername;
+          const wantsPasswordChange = newPassword && newPassword.length > 0;
+
+          if (!wantsUsernameChange && !wantsPasswordChange) { return; }
+          if (wantsPasswordChange) {
+            if (newPassword.length < 8) { setIsError(true); setErrorMessage('New password must be 8+ characters.'); return; }
+          }
+          // Perform updates
+          try {
+            if (wantsUsernameChange) {
+              await update({ username });
+            }
+            if (wantsPasswordChange) {
+              await updatePassword({ newPassword });
+            }
+            await user.reload();
+            setNewPassword('');
+            setSuccessful(true);
+          } catch (err: any) {
+            setIsError(true);
+            setErrorMessage(err?.message || 'Security update failed');
+            return;
+          }
+          payload = {
+            email: user.primaryEmailAddress?.emailAddress
+          }; 
+          break;
         default:
           return;
       }
-
-      setUpdating(prev => ({ ...prev, [section]: true }));
-
-      const res = await fetch('/api/users/update', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setIsError(true);
-        setErrorMessage(json?.error || 'Failed to update');
-      } else {
-        setSuccessful(true);
+      if (payload) {
+        const res = await fetch('/api/users/update', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          setIsError(true);
+          setErrorMessage(json?.error || 'Failed to update');
+        } else {
+          setSuccessful(true);
+        }
       }
     } catch (e: any) {
       setIsError(true);
@@ -485,42 +517,6 @@ export default function ProfilePage() {
                 </button>
               </div>
             </div>
-
-            {/* Security */}
-            <div className="bg-white/10 rounded-xl p-6">
-              <h2 className="font-[Aboreto] text-xl text-pink-300 mb-4">
-                Security
-              </h2>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-white/20 p-2 rounded-md placeholder-gray-300 focus:ring-2 focus:ring-pink-400 border-none"
-                />
-                <input
-                  type="password"
-                  placeholder="New Password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-white/20 p-2 rounded-md placeholder-gray-300 focus:ring-2 focus:ring-pink-400 border-none"
-                />
-                <input
-                  type="password"
-                  placeholder="Old Password *"
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  className="w-full bg-white/20 p-2 rounded-md placeholder-gray-300 focus:ring-2 focus:ring-pink-400 border-none"
-                />
-                <button
-                  onClick={() => handleUpdate("Security")}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md mt-2 font-[Aboreto] hover:opacity-90 transition"
-                >
-                  Update
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* ---------- RIGHT SIDE ---------- */}
@@ -600,6 +596,46 @@ export default function ProfilePage() {
                   </p>
                   <p>Rides Driven</p>
                 </div>
+              </div>
+            </div>
+
+            {/* Security */}
+            <div className="bg-white/10 rounded-xl p-6">
+              <h2 className="font-[Aboreto] text-xl text-pink-300 mb-4">
+                Security
+              </h2>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full bg-white/20 p-2 rounded-md placeholder-gray-300 focus:ring-2 focus:ring-pink-400 border-none"
+                />
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    placeholder="New Password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-white/20 p-2 pr-12 rounded-md placeholder-gray-300 focus:ring-2 focus:ring-pink-400 border-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(s => !s)}
+                    className="absolute inset-y-0 right-2 flex items-center text-xs font-medium text-white/70 hover:text-white focus:outline-none"
+                    aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showNewPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                <button
+                  onClick={() => handleUpdate("Security")}
+                  disabled={!!updating['Security']}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md mt-2 font-[Aboreto] hover:opacity-90 transition disabled:opacity-60"
+                >
+                  {updating['Security'] ? 'Updating…' : 'Update'}
+                </button>
               </div>
             </div>
           </div>
