@@ -71,5 +71,5 @@ SELECT
   u.created_at
 FROM public.users u;
 
-REVOKE SELECT ON public.users FROM anon, authenticated;
+GRANT SELECT ON public.users TO anon, authenticated;
 GRANT SELECT ON public.user_public TO anon, authenticated;

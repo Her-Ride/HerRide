@@ -12,26 +12,63 @@ type LatLng = {
 export default function DashboardPage() {
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
-  const [dateTime, setDateTime] = useState("");
+  const [destinationBrowse, setDestinationBrowse] = useState("");
   const [seats, setSeats] = useState("");
   const [rides, setRides] = useState<any[]>([]);
 
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    const newRide = { id: Date.now(), pickup, destination, dateTime, seats };
+  if (!pickup || !destination) {
+    alert("Please fill all required fields.");
+    return;
+  }
+
+  try {
+    setSubmitting(true);
+
+    
+    const res = await fetch("/api/rides/newride", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pickupAddress: pickup,
+        destinationAddress: destination,
+        seats: seats ? Number(seats) : null,
+        destinationLat: mapCenter?.lat ?? null,
+        destinationLng: mapCenter?.lng ?? null,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Create ride error:", data);
+      alert(data.error || "Failed to create ride");
+      return;
+    }
+
+    
+    const newRide = { id: Date.now(), pickup, destination, seats };
     setRides((prev) => [...prev, newRide]);
+
     setPickup("");
     setDestination("");
-    setDateTime("");
     setSeats("");
 
     alert("Ride request created!");
-  };
-  const handleShowDestinationOnMap = async () => {
+  } catch (err) {
+    console.error(err);
+    alert("Something went wrong creating the ride.");
+  } finally {
+    setSubmitting(false);
+  }
+};
+const handleShowDestinationOnMap = async () => {
   if (!destination) {
     alert("Enter a destination first.");
     return;
@@ -67,6 +104,8 @@ export default function DashboardPage() {
     setIsLocating(false);
   }
 };
+
+
 
   return (
     <div
@@ -125,23 +164,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Date & Time */}
-            <div>
-              <label className="block text-sm mb-1 text-pink-200">
-                Date & Time
-              </label>
-              <div className="flex items-center bg-white/20 rounded-md px-3">
-                <Calendar size={18} className="text-pink-300 mr-2" />
-                <input
-                  type="datetime-local"
-                  value={dateTime}
-                  onChange={(e) => setDateTime(e.target.value)}
-                  className="w-full bg-transparent border-none focus:outline-none text-white py-2"
-                  required
-                />
-              </div>
-            </div>
-
             {/* Seats */}
             <div>
               <label className="block text-sm mb-1 text-pink-200">
@@ -179,8 +201,8 @@ export default function DashboardPage() {
               type="text"
                 placeholder="Enter destination to browse rides"
                 className="w-full bg-white/20 text-white placeholder-gray-300 p-2 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
+                value={destinationBrowse}
+                onChange={(e) => setDestinationBrowse(e.target.value)}
               />
 
               <button
@@ -217,9 +239,6 @@ export default function DashboardPage() {
                   </p>
                   <p>
                     <strong>To:</strong> {ride.destination}
-                  </p>
-                  <p>
-                    <strong>Date:</strong> {ride.dateTime}
                   </p>
                   <p>
                     <strong>Seats:</strong> {ride.seats}
