@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [destination, setDestination] = useState("");
   const [destinationBrowse, setDestinationBrowse] = useState("");
   const [seats, setSeats] = useState("");
+  const [beDriver, setBeDriver] = useState<boolean>(false);
   const [rides, setRides] = useState<any[]>([]);
 
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
@@ -37,7 +38,6 @@ export default function DashboardPage() {
 
     try {
       setSubmitting(true);
-
       
       const res = await fetch("/api/rides/newride", {
         method: "POST",
@@ -48,6 +48,7 @@ export default function DashboardPage() {
           seats: seats ? Number(seats) : null,
           destinationLat: mapCenter?.lat ?? null,
           destinationLng: mapCenter?.lng ?? null,
+          beDriver: beDriver,
         }),
       });
 
@@ -59,14 +60,21 @@ export default function DashboardPage() {
         setErrorMessage(data.error || "Failed to create ride");
         return;
       }
-
       
-      const newRide = { id: Date.now(), pickup, destination, seats };
+      const newRide = { 
+        id: Date.now(),
+        pickup,
+        destination,
+        seats,
+        beDriver,
+      };
+
       setRides((prev) => [...prev, newRide]);
 
       setPickup("");
       setDestination("");
       setSeats("");
+      setBeDriver(false);
 
       setIsSuccess(true);
       setSuccessMessage("Ride requested successfully!");
@@ -174,11 +182,12 @@ export default function DashboardPage() {
 
   return (
     <div
-      className="min-h-screen bg-cover bg-center bg-no-repeat flex justify-center items-center px-4 py-12"
+      className="min-h-screen bg-cover bg-center bg-no-repeat px-4 py-12"
       style={{ backgroundImage: "url(/background.png)" }}
     >
+      {/* Pop ups for errors and success (matching profile styles) */}
       {isError && (
-        <div className="w-[90%] max-w-5xl mx-auto mt-6 bg-red-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
+        <div className="max-w-6xl mx-auto mt-6 bg-red-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl ">
           <div className="flex justify-between items-start gap-4">
             <div>
               <p className="font-semibold">Error</p>
@@ -195,7 +204,7 @@ export default function DashboardPage() {
         </div>
       )}
       {isSuccess && (
-        <div className="w-[90%] max-w-5xl mx-auto mt-6 bg-green-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
+        <div className="max-w-6xl mx-auto mt-6 bg-green-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
           <div className="flex justify-between items-start gap-4">
             <div>
               <p className="font-semibold">Success!</p>
@@ -205,14 +214,13 @@ export default function DashboardPage() {
               onClick={() => { setIsSuccess(false); setSuccessMessage(""); }}
               className="text-white/80 hover:text-white text-lg leading-none"
               aria-label="Dismiss success"
-            >
-              ✕
-            </button>
+            >✕</button>
           </div>
         </div>
       )}
+ 
       {/* Main card */}
-      <div className="w-[90%] max-w-5xl bg-black/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
+      <div className="max-w-6xl mx-auto bg-black/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
         <h1 className="font-[Aboreto] text-3xl md:text-4xl mb-8 text-center tracking-wider">
           HerRide Dashboard 
         </h1>
@@ -281,20 +289,35 @@ export default function DashboardPage() {
               <div className="flex items-center bg-white/20 rounded-md px-3">
                 <CarFront size={18} className="text-pink-300 mr-2" />
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={seats}
-                  onChange={(e) => setSeats(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "" || /^[0-9]+$/.test(v)) {
+                      setSeats(v);
+                    }
+                  }}
                   placeholder="Number of seats"
-                  min="1"
                   className="w-full bg-transparent border-none focus:outline-none text-white placeholder-gray-300 py-2"
                   required
                 />
               </div>
             </div>
 
+            <label className="text-pink-200 flex items-center gap-2 text-sm mt-2">
+              <input
+                type="checkbox"
+                className="accent-pink-400"
+                checked={beDriver}
+                onChange={(e) => setBeDriver(e.target.checked)}
+              />
+              Be the driver for this ride.
+            </label>
             <button
               type="submit"
-              className="w-full mt-4 bg-gradient-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition"
+              className="w-full mt-2 bg-gradient-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition"
             >
               Request a Ride
             </button>
