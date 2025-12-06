@@ -75,9 +75,31 @@ export default function RidesPage() {
     );
   }
 
+  const ONGOING_WINDOW_HOURS = 2; // how long after start we consider a ride "ongoing"
+  const now = new Date();
+
+  // not started yet
   const upcoming = rides.filter((r) => r.started_at === null);
-  const completed = rides.filter((r) => r.started_at !== null);
-  const ongoing: Ride[] = []; // you can define real logic later
+
+  // started rides
+  const startedRides = rides.filter((r) => r.started_at !== null);
+
+  const ongoing = startedRides.filter((r) => {
+    if (!r.started_at) return false;
+    const start = new Date(r.started_at);
+    const diffHours =
+      (now.getTime() - start.getTime()) / (1000 * 60 * 60);
+    return diffHours >= 0 && diffHours <= ONGOING_WINDOW_HOURS;
+  });
+
+  const completed = startedRides.filter((r) => {
+    if (!r.started_at) return false;
+    const start = new Date(r.started_at);
+    const diffHours =
+      (now.getTime() - start.getTime()) / (1000 * 60 * 60);
+    return diffHours > ONGOING_WINDOW_HOURS;
+  });
+  
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
@@ -135,6 +157,25 @@ export default function RidesPage() {
                 No rides in progress.
               </p>
             )}
+            {ongoing.map((ride) => (
+              <div
+                key={ride.id}
+                className="bg-gray-100 rounded-lg p-4 hover:bg-pink-50 transition"
+              >
+                <p>
+                  <strong>From:</strong> {ride.pickup_address || "Unknown"}
+                </p>
+                <p>
+                  <strong>To:</strong> {ride.destination_address || "Unknown"}
+                </p>
+                <p>
+                  <strong>Started:</strong>{" "}
+                  {ride.started_at
+                    ? new Date(ride.started_at).toLocaleString()
+                    : "Unknown"}
+                </p>
+              </div>
+            ))}
           </div>
         </section>
 

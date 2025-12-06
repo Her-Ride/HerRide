@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { MapPin, Calendar, CarFront } from "lucide-react";
+import { MapPin, CarFront, Crosshair } from "lucide-react";
 import Map from "@/components/Map";
 
 type LatLng = {
@@ -14,106 +14,213 @@ export default function DashboardPage() {
   const [destination, setDestination] = useState("");
   const [destinationBrowse, setDestinationBrowse] = useState("");
   const [seats, setSeats] = useState("");
+  const [beDriver, setBeDriver] = useState<boolean>(false);
   const [rides, setRides] = useState<any[]>([]);
 
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [isLocatingPickup, setIsLocatingPickup] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const [isError, setIsError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [isSuccess, setIsSuccess] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<string>("");
+
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!pickup || !destination) {
-    alert("Please fill all required fields.");
-    return;
-  }
-
-  try {
-    setSubmitting(true);
-
-    
-    const res = await fetch("/api/rides/newride", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        pickupAddress: pickup,
-        destinationAddress: destination,
-        seats: seats ? Number(seats) : null,
-        destinationLat: mapCenter?.lat ?? null,
-        destinationLng: mapCenter?.lng ?? null,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("Create ride error:", data);
-      alert(data.error || "Failed to create ride");
+    if (!pickup || !destination) {
+      setIsError(true);
+      setErrorMessage("Please fill all required fields.");
       return;
     }
 
-    
-    const newRide = { id: Date.now(), pickup, destination, seats };
-    setRides((prev) => [...prev, newRide]);
+    try {
+      setSubmitting(true);
+      
+      const res = await fetch("/api/rides/newride", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pickupAddress: pickup,
+          destinationAddress: destination,
+          seats: seats ? Number(seats) : null,
+          destinationLat: mapCenter?.lat ?? null,
+          destinationLng: mapCenter?.lng ?? null,
+          beDriver: beDriver,
+        }),
+      });
 
-    setPickup("");
-    setDestination("");
-    setSeats("");
+      const data = await res.json();
 
-    alert("Ride request created!");
-  } catch (err) {
-    console.error(err);
-    alert("Something went wrong creating the ride.");
-  } finally {
-    setSubmitting(false);
-  }
-};
-const handleShowDestinationOnMap = async () => {
-  if (!destination) {
-    alert("Enter a destination first.");
-    return;
-  }
+      if (!res.ok) {
+        console.error("Create ride error:", data);
+        setIsError(true);
+        setErrorMessage(data.error || "Failed to create ride");
+        return;
+      }
+      
+      const newRide = { 
+        id: Date.now(),
+        pickup,
+        destination,
+        seats,
+        beDriver,
+      };
 
-  try {
-    setIsLocating(true);
+      setRides((prev) => [...prev, newRide]);
 
-    const res = await fetch(
-      `/api/maps/geocode?address=${encodeURIComponent(destination)}`
-    );
+      setPickup("");
+      setDestination("");
+      setSeats("");
+      setBeDriver(false);
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("Geocode error:", data);
-      alert("Unable to locate destination.");
+      setIsSuccess(true);
+      setSuccessMessage("Ride requested successfully!");
+    } catch (err) {
+      console.error(err);
+      setIsError(true);
+      setErrorMessage("Something went wrong creating the ride.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  const handleShowDestinationOnMap = async () => {
+    if (!destination) {
+      setIsError(true);
+      setErrorMessage("Enter a destination first.");
       return;
     }
 
-    const loc = data?.results?.[0]?.geometry?.location;
+    try {
+      setIsLocating(true);
 
-    if (!loc) {
-      alert("No location found for that address.");
+      const res = await fetch(
+        `/api/maps/geocode?address=${encodeURIComponent(destination)}`
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Geocode error:", data);
+        setIsError(true);
+        setErrorMessage("Unable to locate destination.");
+        return;
+      }
+
+      const loc = data?.results?.[0]?.geometry?.location;
+
+      if (!loc) {
+        setIsError(true);
+        setErrorMessage("No location found for that address.");
+        return;
+      }
+
+      setMapCenter({ lat: loc.lat, lng: loc.lng });
+    } catch (err) {
+      console.error(err);
+      setIsError(true);
+      setErrorMessage("Something went wrong looking up that address.");
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  const handleUseCurrentLocationForPickup = async () => {
+    if (!navigator.geolocation) {
+      setIsError(true);
+      setErrorMessage("Geolocation is not supported by your browser.");
       return;
     }
+    try {
+      setIsLocatingPickup(true);
+      const resolver = async (latitude: number, longitude: number) => {
+        const res = await fetch(`/api/maps/reverse?lat=${latitude}&lng=${longitude}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Unable to resolve your location.");
+        const addr = data?.results?.[0]?.formatted_address || "Current location";
+        setPickup(addr);
+        setMapCenter({ lat: latitude, lng: longitude });
+      };
+      const attemptGetPos = (opts: PositionOptions) => new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, opts);
+      });
 
-    setMapCenter({ lat: loc.lat, lng: loc.lng });
-  } catch (err) {
-    console.error(err);
-    alert("Something went wrong looking up that address.");
-  } finally {
-    setIsLocating(false);
-  }
-};
+      try {
+        // First attempt with high accuracy
+        const pos = await attemptGetPos({ enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
+        await resolver(pos.coords.latitude, pos.coords.longitude);
+      } catch (err: any) {
+        const code = err?.code;
+        if (code === 1) {
+          setIsError(true);
+          setErrorMessage("Permission denied. Please allow location access in your browser settings and retry.");
+          return;
+        }
+        if (code === 2 || code === 3) {
+          // Second attempt with lower accuracy
+          try {
+            const pos2 = await attemptGetPos({ enableHighAccuracy: false, timeout: 40000, maximumAge: 10000 });
+            await resolver(pos2.coords.latitude, pos2.coords.longitude);
+          } catch (err2: any) {
+            const msg = err2?.message || (code === 2 ? "Position unavailable" : "Location timeout");
+            setIsError(true);
+            setErrorMessage(`${msg}. Please check GPS, network, or try again.`);
+          }
+        } else {
+          setIsError(true);
+          setErrorMessage(err?.message || "Unknown error acquiring position.");
+        }
+      }
+    } finally {
+      setIsLocatingPickup(false);
+    }
+  };
 
 
 
   return (
     <div
-      className="min-h-screen bg-cover bg-center bg-no-repeat flex justify-center items-center px-4 py-12"
+      className="min-h-screen bg-cover bg-center bg-no-repeat px-4 py-12"
       style={{ backgroundImage: "url(/background.png)" }}
     >
+      {/* Pop ups for errors and success (matching profile styles) */}
+      {isError && (
+        <div className="max-w-6xl mx-auto mt-6 bg-red-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl ">
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <p className="font-semibold">Error</p>
+              <p className="text-sm">{errorMessage}</p>
+            </div>
+            <button
+              onClick={() => { setIsError(false); setErrorMessage(""); }}
+              className="text-white/80 hover:text-white"
+              aria-label="Dismiss error"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+      {isSuccess && (
+        <div className="max-w-6xl mx-auto mt-6 bg-green-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <p className="font-semibold">Success!</p>
+              <p className="text-sm">{successMessage}</p>
+            </div>
+            <button
+              onClick={() => { setIsSuccess(false); setSuccessMessage(""); }}
+              className="text-white/80 hover:text-white text-lg leading-none"
+              aria-label="Dismiss success"
+            >✕</button>
+          </div>
+        </div>
+      )}
+ 
       {/* Main card */}
-      <div className="w-[90%] max-w-5xl bg-black/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
+      <div className="max-w-6xl mx-auto bg-black/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
         <h1 className="font-[Aboreto] text-3xl md:text-4xl mb-8 text-center tracking-wider">
           HerRide Dashboard 
         </h1>
@@ -133,16 +240,26 @@ const handleShowDestinationOnMap = async () => {
               <label className="block text-sm mb-1 text-pink-200">
                 Pickup Location
               </label>
-              <div className="flex items-center bg-white/20 rounded-md px-3">
+              <div className="flex items-center bg-white/20 rounded-md px-3 relative">
                 <MapPin size={18} className="text-pink-300 mr-2" />
                 <input
                   type="text"
                   value={pickup}
                   onChange={(e) => setPickup(e.target.value)}
                   placeholder="Enter pickup location"
-                  className="w-full bg-transparent border-none focus:outline-none text-white placeholder-gray-300 py-2"
+                  className="w-full bg-transparent border-none focus:outline-none text-white placeholder-gray-300 py-2 pr-12"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={handleUseCurrentLocationForPickup}
+                  disabled={isLocatingPickup}
+                  className="absolute right-2 inset-y-0 my-auto h-8 px-2 bg-white/10 hover:bg-white/20 text-white text-xs rounded-md flex items-center gap-1 disabled:opacity-60"
+                  aria-label="Use current location"
+                >
+                  <Crosshair size={14} />
+                  {isLocatingPickup ? "Locating" : ""}
+                </button>
               </div>
             </div>
 
@@ -172,20 +289,35 @@ const handleShowDestinationOnMap = async () => {
               <div className="flex items-center bg-white/20 rounded-md px-3">
                 <CarFront size={18} className="text-pink-300 mr-2" />
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={seats}
-                  onChange={(e) => setSeats(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "" || /^[0-9]+$/.test(v)) {
+                      setSeats(v);
+                    }
+                  }}
                   placeholder="Number of seats"
-                  min="1"
                   className="w-full bg-transparent border-none focus:outline-none text-white placeholder-gray-300 py-2"
                   required
                 />
               </div>
             </div>
 
+            <label className="text-pink-200 flex items-center gap-2 text-sm mt-2">
+              <input
+                type="checkbox"
+                className="accent-pink-400"
+                checked={beDriver}
+                onChange={(e) => setBeDriver(e.target.checked)}
+              />
+              Be the driver for this ride.
+            </label>
             <button
               type="submit"
-              className="w-full mt-4 bg-gradient-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition"
+              className="w-full mt-2 bg-gradient-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition"
             >
               Request a Ride
             </button>

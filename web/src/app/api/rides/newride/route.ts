@@ -15,6 +15,7 @@ export async function POST(req: Request) {
       seats,
       destinationLat,
       destinationLng,
+      beDriver,
     } = body;
 
     if (!pickupAddress || !destinationAddress) {
@@ -33,13 +34,12 @@ export async function POST(req: Request) {
     const { data: ride, error: rideError } = await supabase
       .from("rides")
       .insert({
-        driver_id: null, 
+        driver_id: beDriver ? user.id : null, 
         pickup_address: pickupAddress,
         destination_address: destinationAddress,
         seats: seats ? Number(seats) : null,
         destination_lat: destinationLat ?? null,
         destination_lng: destinationLng ?? null,
-        
       })
       .select()
       .single();
