@@ -5,6 +5,7 @@ import { UpdateUserParams, UpdateUserPasswordParams } from "@clerk/types";
 import { useUser, useReverification } from "@clerk/nextjs";
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
+import { set } from "zod";
 
 export default function ProfilePage() {
   // User profiles
@@ -34,7 +35,7 @@ export default function ProfilePage() {
   // States for email
   const [code, setCode] = useState<string>("");
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [successful, setSuccessful] = useState<boolean>(false);
+  const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [emailObj, setEmailObj] = useState<any | undefined>();
 
   // Get info from Supabase
@@ -186,7 +187,7 @@ export default function ProfilePage() {
             }
             await user.reload();
             setNewPassword('');
-            setSuccessful(true);
+            setIsSuccess(true);
           } catch (err: any) {
             setIsError(true);
             setErrorMessage(err?.message || 'Security update failed');
@@ -210,7 +211,7 @@ export default function ProfilePage() {
           setIsError(true);
           setErrorMessage(json?.error || 'Failed to update');
         } else {
-          setSuccessful(true);
+          setIsSuccess(true);
         }
       }
     } catch (e: any) {
@@ -259,7 +260,7 @@ export default function ProfilePage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: emailObj.emailAddress }),
         });
-        setSuccessful(true);
+        setIsSuccess(true);
         setIsVerifying(false);
         setCode('');
       } else {
@@ -301,7 +302,7 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-      {successful && (
+      {isSuccess && (
         <div className="max-w-6xl mx-auto mt-6 bg-green-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
           <div className="flex justify-between items-start gap-4">
             <div>
@@ -309,14 +310,14 @@ export default function ProfilePage() {
               <p className="text-sm">Your information has been updated.</p>
             </div>
             <button
-              onClick={() => { setSuccessful(false); setEmailObj(undefined); }}
+              onClick={() => { setIsSuccess(false); setEmailObj(undefined); }}
               className="text-white/80 hover:text-white text-lg leading-none"
               aria-label="Dismiss success"
             >✕</button>
           </div>
         </div>
       )}
-      {isVerifying && !successful && emailObj && (
+      {isVerifying && !isSuccess && emailObj && (
         <div className="max-w-6xl mx-auto mt-6 bg-pink-900/50 text-white p-8 md:p-12 rounded-2xl shadow-2xl">
           <div className="flex justify-between items-start gap-4">
             <div className="w-full space-y-4">

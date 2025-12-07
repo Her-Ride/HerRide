@@ -8,6 +8,18 @@ type LatLng = {
   lat: number;
   lng: number;
 };
+type Ride = {
+  id: number;
+  driver_id?: string;
+  pickup: string;
+  pickupLatLng?: LatLng;
+  destination: string;
+  destinationLatLng?: LatLng;
+  seats: number;
+  startedAt?: Date | null;
+  finishedAt?: Date | null;
+  createdAt?: Date | null;
+};
 
 export default function DashboardPage() {
   const [pickup, setPickup] = useState("");
@@ -15,19 +27,20 @@ export default function DashboardPage() {
   const [destinationBrowse, setDestinationBrowse] = useState("");
   const [seats, setSeats] = useState("");
   const [beDriver, setBeDriver] = useState<boolean>(false);
-  const [rides, setRides] = useState<any[]>([]);
+  const [rides, setRides] = useState<Ride[]>([]);
 
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
-  const [isLocating, setIsLocating] = useState(false);
-  const [isLocatingPickup, setIsLocatingPickup] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [mapPickupCenter, setMapPickupCenter] = useState<LatLng | null>(null);
+  const [mapDestCenter, setMapDestCenter] = useState<LatLng | null>(null);
 
+  const [updating, setUpdating] = useState<Record<string, boolean>>({});
+  const [isLocatingPickup, setIsLocatingPickup] = useState(false);
   const [isError, setIsError] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string>("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, section: string) => {
     e.preventDefault();
 
     if (!pickup || !destination) {
@@ -37,8 +50,7 @@ export default function DashboardPage() {
     }
 
     try {
-      setSubmitting(true);
-      
+      setUpdating(prev => ({ ...prev, [section]: true }));      
       const res = await fetch("/api/rides/newride", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -61,12 +73,16 @@ export default function DashboardPage() {
         return;
       }
       
-      const newRide = { 
-        id: Date.now(),
-        pickup,
-        destination,
-        seats,
-        beDriver,
+      const newRide: Ride = {
+        id: data?.id ?? -1,
+        pickup: data?.pickup_address ?? pickup,
+        destination: data?.destination_address ?? destination,
+        pickupLatLng: data?.pickup_lat && data?.pickup_lng ? { 
+          lat: data.pickup_lat, lng: data.pickup_lng } : undefined,
+        destinationLatLng: data?.destination_lat && data?.destination_lng ? {
+          lat: data.destination_lat, lng: data.destination_lng } : undefined,
+        seats: data?.seats ?? Number(seats),
+        driver_id: data?.driver_id ?? undefined,
       };
 
       setRides((prev) => [...prev, newRide]);
@@ -83,48 +99,11 @@ export default function DashboardPage() {
       setIsError(true);
       setErrorMessage("Something went wrong creating the ride.");
     } finally {
-      setSubmitting(false);
+      setUpdating(prev => ({ ...prev, [section]: false }));
     }
   };
   const handleShowDestinationOnMap = async () => {
-    if (!destination) {
-      setIsError(true);
-      setErrorMessage("Enter a destination first.");
-      return;
-    }
-
-    try {
-      setIsLocating(true);
-
-      const res = await fetch(
-        `/api/maps/geocode?address=${encodeURIComponent(destination)}`
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("Geocode error:", data);
-        setIsError(true);
-        setErrorMessage("Unable to locate destination.");
-        return;
-      }
-
-      const loc = data?.results?.[0]?.geometry?.location;
-
-      if (!loc) {
-        setIsError(true);
-        setErrorMessage("No location found for that address.");
-        return;
-      }
-
-      setMapCenter({ lat: loc.lat, lng: loc.lng });
-    } catch (err) {
-      console.error(err);
-      setIsError(true);
-      setErrorMessage("Something went wrong looking up that address.");
-    } finally {
-      setIsLocating(false);
-    }
+ 
   };
 
   const handleUseCurrentLocationForPickup = async () => {
@@ -185,7 +164,6 @@ export default function DashboardPage() {
       className="min-h-screen bg-cover bg-center bg-no-repeat px-4 py-12"
       style={{ backgroundImage: "url(/background.png)" }}
     >
-      {/* Pop ups for errors and success (matching profile styles) */}
       {isError && (
         <div className="max-w-6xl mx-auto mt-6 bg-red-900/60 text-white p-8 md:p-12 rounded-2xl shadow-2xl ">
           <div className="flex justify-between items-start gap-4">
@@ -228,7 +206,7 @@ export default function DashboardPage() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Left side: Request a Ride */}
           <form
-            onSubmit={handleSubmit}
+            onSubmit={(e) => handleSubmit(e, "requestRide")}
             className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 space-y-5 shadow-lg"
           >
             <h2 className="font-[Aboreto] text-2xl text-pink-300 mb-2">
@@ -284,7 +262,7 @@ export default function DashboardPage() {
             {/* Seats */}
             <div>
               <label className="block text-sm mb-1 text-pink-200">
-                Available Seats
+                Seats
               </label>
               <div className="flex items-center bg-white/20 rounded-md px-3">
                 <CarFront size={18} className="text-pink-300 mr-2" />
@@ -317,9 +295,10 @@ export default function DashboardPage() {
             </label>
             <button
               type="submit"
+              disabled={updating["requestRide"]}
               className="w-full mt-2 bg-gradient-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition"
             >
-              Request a Ride
+              {updating['requestRide'] ? 'Creating Ride..' : 'Request a Ride'}
             </button>
           </form>
 
@@ -340,10 +319,9 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={handleShowDestinationOnMap}
-                disabled={isLocating}
                 className="w-full mb-4 bg-white/20 text-white text-sm py-2 rounded-md hover:bg-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition"
               >
-                {isLocating ? "Locating..." : "Show destination on map"}
+                Show destination on map
               </button>
 
               {/* Map area */}
@@ -354,32 +332,6 @@ export default function DashboardPage() {
               </button>
             </div>
 
-        {/* Show submitted rides */}
-        {rides.length > 0 && (
-          <div className="mt-10 bg-white/10 p-6 rounded-xl">
-            <h3 className="font-[Aboreto] text-pink-300 mb-3 text-center">
-              Your Ride Requests
-            </h3>
-            <div className="space-y-3 text-gray-200">
-              {rides.map((ride) => (
-                <div
-                  key={ride.id}
-                  className="border-b border-white/20 pb-2 text-sm"
-                >
-                  <p>
-                    <strong>From:</strong> {ride.pickup}
-                  </p>
-                  <p>
-                    <strong>To:</strong> {ride.destination}
-                  </p>
-                  <p>
-                    <strong>Seats:</strong> {ride.seats}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   </div>
