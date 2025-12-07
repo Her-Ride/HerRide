@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from '@clerk/nextjs/server'
 import { createServerSupabaseClient } from '@/lib/supabase/client'
+import { googleClient, GOOGLE_MAPS_API_KEY } from '@/lib/google'
 
 export async function POST(req: Request) {
   try {
@@ -13,8 +14,6 @@ export async function POST(req: Request) {
       pickupAddress,
       destinationAddress,
       seats,
-      destinationLat,
-      destinationLng,
       beDriver,
     } = body;
 
@@ -31,6 +30,31 @@ export async function POST(req: Request) {
 
     const supabase = createServerSupabaseClient()
 
+    let pickupLat: number | null = null;
+    let pickupLng: number | null = null;
+    let destinationLat: number | null = null;
+    let destinationLng: number | null = null;
+
+    { // Geocode pickup
+      const { data } = await googleClient.geocode({ params: { address: pickupAddress, key: GOOGLE_MAPS_API_KEY } });
+      const loc = data?.results?.[0]?.geometry?.location;
+      if (!loc) {
+        return NextResponse.json({ error: 'Pickup address could not be resolved', details: data }, { status: 400 });
+      }
+      pickupLat = Number(loc.lat);
+      pickupLng = Number(loc.lng);
+    }
+
+    { // Geocode destination
+      const { data } = await googleClient.geocode({ params: { address: destinationAddress, key: GOOGLE_MAPS_API_KEY } });
+      const loc = data?.results?.[0]?.geometry?.location;
+      if (!loc) {
+        return NextResponse.json({ error: 'Destination address could not be resolved', details: data }, { status: 400 });
+      }
+      destinationLat = Number(loc.lat);
+      destinationLng = Number(loc.lng);
+    }
+
     const { data: ride, error: rideError } = await supabase
       .from("rides")
       .insert({
@@ -38,8 +62,10 @@ export async function POST(req: Request) {
         pickup_address: pickupAddress,
         destination_address: destinationAddress,
         seats: seats ? Number(seats) : null,
-        destination_lat: destinationLat ?? null,
-        destination_lng: destinationLng ?? null,
+        destination_lat: destinationLat,
+        destination_lng: destinationLng,
+        pickup_lat: pickupLat,
+        pickup_lng: pickupLng,
       })
       .select()
       .single();
