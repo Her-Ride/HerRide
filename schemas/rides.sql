@@ -77,11 +77,23 @@ CREATE POLICY "Driver can finish a ride"
   WITH CHECK (
     driver_id = (select auth.jwt()->>'sub') AND finished_at IS NOT NULL
   );
-  
+
 CREATE POLICY "Driver can unclaim their ride if ride hasn't started"
   ON public.rides FOR UPDATE TO authenticated
   USING (driver_id = (select auth.jwt()->>'sub') AND started_at IS NULL)
   WITH CHECK (driver_id IS NULL);
+
+-- Delete rides when no one is associated with them
+GRANT DELETE ON public.rides TO authenticated;
+CREATE POLICY "Delete ride with no associations"
+  ON public.rides FOR DELETE TO authenticated
+  USING (
+    started_at IS NULL
+    AND driver_id IS NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM public.rider_rides rr WHERE rr.ride_id = rides.id
+    )
+  );
 
 -- Restrict column updates so drivers cannot change pickup/destination details after claiming
 REVOKE UPDATE ON public.rides FROM authenticated;
