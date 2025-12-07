@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS rides (
     seats INT CHECK (seats is null or seats > 0),
 
     started_at TIMESTAMP WITH TIME ZONE,
+    finished_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -45,7 +46,7 @@ CREATE POLICY "Users can create a ride"
 -- Riders
 CREATE POLICY "Rider can create rider_ride (join ride)"
   ON public.rider_rides FOR INSERT TO authenticated
-  WITH CHECK (rider_id = (select auth.jwt()->>'sub'));
+  WITH CHECK (rider_id = (select auth.jwt()->>'sub') );
 
 CREATE POLICY "Rider can delete rider_ride (leave ride)"
   ON public.rider_rides FOR DELETE TO authenticated
@@ -60,9 +61,23 @@ CREATE POLICY "Driver can delete rider_ride (remove rider from ride)"
 -- Drivers
 CREATE POLICY "Driver can join and update a ride"
   ON public.rides FOR UPDATE TO authenticated
-  USING (driver_id = (select auth.jwt()->>'sub') OR driver_id IS NULL)
+  USING ((driver_id = (select auth.jwt()->>'sub') OR driver_id IS NULL) AND started_at IS NULL)
   WITH CHECK (driver_id = (select auth.jwt()->>'sub'));
 
+CREATE POLICY "Driver can start a ride"
+  ON public.rides FOR UPDATE TO authenticated
+  USING (driver_id = (select auth.jwt()->>'sub') AND started_at IS NULL)
+  WITH CHECK (
+    driver_id = (select auth.jwt()->>'sub') AND started_at IS NOT NULL
+  );
+
+CREATE POLICY "Driver can finish a ride"
+  ON public.rides FOR UPDATE TO authenticated
+  USING (driver_id = (select auth.jwt()->>'sub') AND started_at IS NOT NULL AND finished_at IS NULL)
+  WITH CHECK (
+    driver_id = (select auth.jwt()->>'sub') AND finished_at IS NOT NULL
+  );
+  
 CREATE POLICY "Driver can unclaim their ride if ride hasn't started"
   ON public.rides FOR UPDATE TO authenticated
   USING (driver_id = (select auth.jwt()->>'sub') AND started_at IS NULL)
