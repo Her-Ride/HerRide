@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 
 export default function LearnMorePage() {
+  const { isSignedIn } = useUser();
+
   return (
     
     <div
@@ -29,12 +34,25 @@ export default function LearnMorePage() {
         </div>
 
         <div className="ready-box">
-          <span>READY?</span>
-          <Link href="/login">
-            <button className="login-btn bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition">
-              LOG IN
-            </button>
-          </Link>
+          {isSignedIn ? (
+            <>
+              <span>READY?</span>
+              <Link href="/dashboard">
+                <button className="login-btn bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition">
+                  PLAN A RIDE
+                </button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <span>READY?</span>
+              <Link href="/login">
+                <button className="login-btn bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition">
+                  LOG IN
+                </button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { UserButton, SignInButton, SignUpButton} from "@clerk/nextjs";
+import { UserButton, SignUpButton} from "@clerk/nextjs";
 
 export default function Header( { isSignedIn = false }: { isSignedIn: boolean } ) {
   return (
@@ -59,17 +59,20 @@ export default function Header( { isSignedIn = false }: { isSignedIn: boolean } 
           </div>  
         </>) : (<>
           <nav className="flex items-center flex-wrap">
-            <SignInButton>
-                    <button className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]">
-                      Log In
-                    </button>
-            </SignInButton>
+            <Link
+              href="/login"
+              className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
+            >
+              Log In
+            </Link>
+
             <SignUpButton>
-                    <button className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]">
-                      Sign Up
-                    </button>
+              <button className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]">
+                Sign Up
+              </button>
             </SignUpButton>
           </nav>
+
         </>)}
       </div>
     </header>
