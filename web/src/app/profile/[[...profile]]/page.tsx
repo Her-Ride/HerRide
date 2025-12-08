@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import { UpdateUserParams, UpdateUserPasswordParams } from "@clerk/types";
 import { useUser, useReverification } from "@clerk/nextjs";
 import PhoneInput from 'react-phone-number-input'
@@ -530,9 +531,11 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center space-y-4">
                 {/* Profile picture circle */}
                 <div className="w-24 h-24 bg-white/20 rounded-full overflow-hidden flex items-center justify-center">
-                  <img
+                  <Image
                     src={profilePic}
                     alt="Profile"
+                    width={96}
+                    height={96}
                     className="w-full h-full object-cover"
                   />
                 </div>

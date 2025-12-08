@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { GoogleMap, DirectionsRenderer, useJsApiLoader } from "@react-google-maps/api";
 import { useUser } from "@clerk/nextjs";
 
@@ -313,7 +314,7 @@ export default function DebugMapsPage() {
 				{imageUrl && (
 				<div className="mt-4">
 					<h3 className="text-lg font-semibold">Profile Image</h3>
-					<img src={imageUrl} alt="Profile" className="w-32 h-32 rounded-full object-cover" />
+					<Image src={imageUrl} alt="Profile" width={128} height={128} className="w-32 h-32 rounded-full object-cover" />
 				</div>
 				)}
 				<h3 className="text-lg font-semibold">Username</h3>
