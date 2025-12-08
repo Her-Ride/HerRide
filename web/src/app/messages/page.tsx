@@ -1,4 +1,5 @@
 import { Search, Car, MessageCircle } from "lucide-react";
+import Image from "next/image";
 
 export default function MessagesPage() {
   return (
@@ -23,9 +24,11 @@ export default function MessagesPage() {
               Current Ride
             </h3>
             <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-purple-50 cursor-pointer transition">
-              <img
+              <Image
                 src="https://api.dicebear.com/9.x/avataaars/svg?seed=driver"
                 alt="user"
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-full"
               />
               <div>
@@ -44,9 +47,11 @@ export default function MessagesPage() {
                 key={i}
                 className="flex items-center space-x-3 p-3 rounded-lg hover:bg-purple-50 cursor-pointer transition"
               >
-                <img
+                <Image
                   src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${name}`}
                   alt={name}
+                  width={40}
+                  height={40}
                   className="w-10 h-10 rounded-full"
                 />
                 <div>

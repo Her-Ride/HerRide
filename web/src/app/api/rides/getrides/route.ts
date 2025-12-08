@@ -17,11 +17,7 @@ export async function GET() {
       .eq("rider_id", user.id);
 
     if (linksError) {
-      console.error("GET /api/rides rider_rides error:", linksError);
-      return NextResponse.json(
-        { error: "Failed to load rides", details: linksError },
-        { status: 500 }
-      );
+      return NextResponse.json( { error: linksError.message || "Failed to load rider_rides" }, { status: 500 } );
     }
 
     const rideIds = (links ?? []).map((row) => row.ride_id);
@@ -38,19 +34,11 @@ export async function GET() {
       .order("created_at", { ascending: false });
 
     if (ridesError) {
-      console.error("GET /api/rides rides error:", ridesError);
-      return NextResponse.json(
-        { error: "Failed to load rides", details: ridesError },
-        { status: 500 }
-      );
+      return NextResponse.json( { error: ridesError.message || "Failed to load rides" }, { status: 500 } );
     }
 
-    return NextResponse.json(rides ?? [], { status: 200 });
+    return NextResponse.json(rides , { status: 200 });
   } catch (err: any) {
-    console.error("GET /api/rides server error:", err);
-    return NextResponse.json(
-      { error: err?.message || "Server error" },
-      { status: 500 }
-    );
+    return NextResponse.json( { error: err.message || "Server error" }, { status: 500 } );
   }
 }

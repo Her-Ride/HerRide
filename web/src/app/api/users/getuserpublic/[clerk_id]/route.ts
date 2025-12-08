@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/client'
 
-export async function GET(_req: Request, { params }: { params: { clerk_id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ clerk_id: string }> }) {
     try {
-        const { clerk_id } = params
+        const { clerk_id } = await params
         if (!clerk_id) 
             return NextResponse.json({ error: 'Missing clerk_id' }, { status: 400 })
 

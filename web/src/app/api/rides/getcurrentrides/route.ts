@@ -28,7 +28,9 @@ export async function GET() {
         .from("rides")
         .select("*")
         .in("id", rideIds)
-        .is("started_at", null);
+        .is("started_at", null)
+        .order("created_at", { ascending: false });
+        
       if (riderErr) {
         return NextResponse.json({ error: riderErr.message }, { status: 400 });
       }

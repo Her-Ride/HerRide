@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import { UpdateUserParams, UpdateUserPasswordParams } from "@clerk/types";
 import { useUser, useReverification } from "@clerk/nextjs";
 import PhoneInput from 'react-phone-number-input'
@@ -336,7 +337,7 @@ export default function ProfilePage() {
                   <button
                     onClick={verifyEmailCode}
                     disabled={code.length === 0}
-                    className="flex-1 min-w-[110px] bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md font-[Aboreto] disabled:opacity-50"
+                    className="flex-1 min-w-[110px] bg-linear-to-r from-purple-600 to-pink-400 py-2 rounded-md font-[Aboreto] disabled:opacity-50"
                   >Verify</button>
                   <button
                     type="button"
@@ -432,7 +433,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => handleUpdate("Personal")}
                   disabled={!!updating['Personal']}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md mt-2 font-[Aboreto] hover:opacity-90 transition disabled:opacity-60"
+                  className="w-full bg-linear-to-r from-purple-600 to-pink-400 py-2 rounded-md mt-2 font-[Aboreto] hover:opacity-90 transition disabled:opacity-60"
                 >
                   {updating['Personal'] ? 'Updating…' : 'Update'}
                 </button>
@@ -512,7 +513,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => handleUpdate("Vehicle")}
                   disabled={!!updating['Vehicle']}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md mt-2 font-[Aboreto] hover:opacity-90 transition disabled:opacity-60"
+                  className="w-full bg-linear-to-r from-purple-600 to-pink-400 py-2 rounded-md mt-2 font-[Aboreto] hover:opacity-90 transition disabled:opacity-60"
                 >
                   {updating['Vehicle'] ? 'Updating…' : 'Update'}
                 </button>
@@ -530,9 +531,11 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center space-y-4">
                 {/* Profile picture circle */}
                 <div className="w-24 h-24 bg-white/20 rounded-full overflow-hidden flex items-center justify-center">
-                  <img
+                  <Image
                     src={profilePic}
                     alt="Profile"
+                    width={96}
+                    height={96}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -567,7 +570,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => handleUpdate("About")}
                   disabled={!!updating['About']}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md font-[Aboreto] hover:opacity-90 transition disabled:opacity-60"
+                  className="w-full bg-linear-to-r from-purple-600 to-pink-400 py-2 rounded-md font-[Aboreto] hover:opacity-90 transition disabled:opacity-60"
                 >
                   {updating['About'] ? 'Updating…' : 'Update'}
                 </button>
@@ -633,7 +636,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => handleUpdate("Security")}
                   disabled={!!updating['Security']}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-400 py-2 rounded-md mt-2 font-[Aboreto] hover:opacity-90 transition disabled:opacity-60"
+                  className="w-full bg-linear-to-r from-purple-600 to-pink-400 py-2 rounded-md mt-2 font-[Aboreto] hover:opacity-90 transition disabled:opacity-60"
                 >
                   {updating['Security'] ? 'Updating…' : 'Update'}
                 </button>

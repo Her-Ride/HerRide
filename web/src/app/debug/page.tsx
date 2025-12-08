@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { GoogleMap, DirectionsRenderer, useJsApiLoader } from "@react-google-maps/api";
 import { useUser } from "@clerk/nextjs";
 
@@ -228,13 +229,13 @@ export default function DebugMapsPage() {
 				<h2 className="text-xl font-semibold">Directions (origin &rarr; destination)</h2>
 				<form onSubmit={doDirections} className="flex flex-wrap items-center gap-2">
 					<input
-						className="border rounded px-3 py-2 min-w-[240px] flex-1"
+						className="border rounded px-3 py-2 min-w-60 flex-1"
 						value={origin}
 						onChange={(e) => setOrigin(e.target.value)}
 						placeholder="Origin (address or 'lat,lng')"
 					/>
 					<input
-						className="border rounded px-3 py-2 min-w-[240px] flex-1"
+						className="border rounded px-3 py-2 min-w-60 flex-1"
 						value={destination}
 						onChange={(e) => setDestination(e.target.value)}
 						placeholder="Destination (address or 'lat,lng')"
@@ -313,7 +314,7 @@ export default function DebugMapsPage() {
 				{imageUrl && (
 				<div className="mt-4">
 					<h3 className="text-lg font-semibold">Profile Image</h3>
-					<img src={imageUrl} alt="Profile" className="w-32 h-32 rounded-full object-cover" />
+					<Image src={imageUrl} alt="Profile" width={128} height={128} className="w-32 h-32 rounded-full object-cover" />
 				</div>
 				)}
 				<h3 className="text-lg font-semibold">Username</h3>

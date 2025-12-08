@@ -20,7 +20,7 @@ export default function RidesPage() {
   useEffect(() => {
     const fetchRides = async () => {
       try {
-        const res = await fetch("/api/rides");
+        const res = await fetch("/api/rides/getrides");
 
         const text = await res.text(); // 👈 read raw text first
 
