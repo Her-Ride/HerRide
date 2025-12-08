@@ -228,13 +228,13 @@ export default function DebugMapsPage() {
 				<h2 className="text-xl font-semibold">Directions (origin &rarr; destination)</h2>
 				<form onSubmit={doDirections} className="flex flex-wrap items-center gap-2">
 					<input
-						className="border rounded px-3 py-2 min-w-[240px] flex-1"
+						className="border rounded px-3 py-2 min-w-60 flex-1"
 						value={origin}
 						onChange={(e) => setOrigin(e.target.value)}
 						placeholder="Origin (address or 'lat,lng')"
 					/>
 					<input
-						className="border rounded px-3 py-2 min-w-[240px] flex-1"
+						className="border rounded px-3 py-2 min-w-60 flex-1"
 						value={destination}
 						onChange={(e) => setDestination(e.target.value)}
 						placeholder="Destination (address or 'lat,lng')"

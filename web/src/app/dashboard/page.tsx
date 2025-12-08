@@ -3,23 +3,7 @@
 import React, { useState } from "react";
 import { MapPin, CarFront, Crosshair } from "lucide-react";
 import Map from "@/components/Map";
-
-type LatLng = {
-  lat: number;
-  lng: number;
-};
-type Ride = {
-  id: number;
-  driver_id?: string;
-  pickup: string;
-  pickupLatLng?: LatLng;
-  destination: string;
-  destinationLatLng?: LatLng;
-  seats: number;
-  startedAt?: Date | null;
-  finishedAt?: Date | null;
-  createdAt?: Date | null;
-};
+import { LatLng, Ride } from "@/lib/types";
 
 export default function DashboardPage() {
   const [pickup, setPickup] = useState("");
@@ -296,7 +280,7 @@ export default function DashboardPage() {
             <button
               type="submit"
               disabled={updating["requestRide"]}
-              className="w-full mt-2 bg-gradient-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition"
+              className="w-full mt-2 bg-linear-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition"
             >
               {updating['requestRide'] ? 'Creating Ride..' : 'Request a Ride'}
             </button>
@@ -327,7 +311,7 @@ export default function DashboardPage() {
               {/* Map area */}
               <Map center={mapCenter || undefined} />
 
-              <button className="w-full mt-4 bg-gradient-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition">
+              <button className="w-full mt-4 bg-linear-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition">
                 Browse Rides
               </button>
             </div>
