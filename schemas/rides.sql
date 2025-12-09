@@ -97,5 +97,5 @@ CREATE POLICY "Delete ride with no associations"
 
 -- Restrict column updates so drivers cannot change pickup/destination details after claiming
 REVOKE UPDATE ON public.rides FROM authenticated;
-GRANT UPDATE (driver_id, started_at, seats) ON public.rides TO authenticated;
+GRANT UPDATE (driver_id, started_at, finished_at seats) ON public.rides TO authenticated;
 

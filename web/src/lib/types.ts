@@ -5,7 +5,7 @@ export type LatLng = {
 
 export type Ride = {
   id: number;
-  driver_id?: string;
+  driverID?: string;
   pickup: string;
   pickupLatLng?: LatLng;
   destination: string;

@@ -13,10 +13,10 @@ export async function POST(req: Request) {
     const supabase = createServerSupabaseClient();
 
     // Driver can finish a ride when started_at is not null and finished_at is null.
-    const nowIso = new Date().toISOString();
+    const now = new Date().toISOString();
     const { error } = await supabase
       .from("rides")
-      .update({ finished_at: nowIso })
+      .update({ finished_at: now })
       .eq("id", rideId)
       .not("started_at", "is", null)
       .is("finished_at", null)

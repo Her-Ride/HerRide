@@ -1,17 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MapPin, CarFront, Crosshair } from "lucide-react";
 import Map from "@/components/Map";
 import { LatLng, Ride } from "@/lib/types";
+import { useUser } from "@clerk/nextjs";
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { user } = useUser();
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [destinationBrowse, setDestinationBrowse] = useState("");
   const [seats, setSeats] = useState("");
   const [beDriver, setBeDriver] = useState<boolean>(false);
-  const [rides, setRides] = useState<Ride[]>([]);
+  const [userRides, setUserRides] = useState<Ride[]>([]);
 
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
   const [mapPickupCenter, setMapPickupCenter] = useState<LatLng | null>(null);
@@ -23,6 +27,125 @@ export default function DashboardPage() {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string>("");
+
+  // Load current rides on mount
+  useEffect(() => {
+    const loadRides = async () => {
+      try {
+        const res = await fetch("/api/rides/getcurrentrides", { method: "GET" });
+        const data = await res.json();
+        if (!res.ok) {
+          setIsError(true);
+          setErrorMessage(data?.error || "Failed to load current rides");
+          return;
+        }
+
+        const rides: Ride[] = (data?.rides ?? data ?? []).map((r: any) => ({
+          id: r.id,
+          pickup: r.pickup_address ?? r.pickup,
+          destination: r.destination_address ?? r.destination,
+          pickupLatLng: r.pickup_lat && r.pickup_lng ? { lat: r.pickup_lat, lng: r.pickup_lng } : undefined,
+          destinationLatLng: r.destination_lat && r.destination_lng ? { lat: r.destination_lat, lng: r.destination_lng } : undefined,
+          seats: r.seats,
+          driverID: r.driver_id ?? undefined,
+          startedAt: r.started_at ?? null,
+          finishedAt: r.finished_at ?? null,
+        }));
+        setUserRides(rides);
+      } catch (err) {
+        setIsError(true);
+        setErrorMessage("Unable to load current rides.");
+      }
+    };
+    loadRides();
+  }, []);
+
+  // Action handlers for rides
+  const leaveRide = async (rideId: number) => {
+    try {
+      setUpdating(prev => ({ ...prev, [`leave-${rideId}`]: true }));
+      const res = await fetch("/api/rides/leaveride", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rideId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to leave ride");
+      // Remove ride from local list (either left or deleted)
+      setUserRides(prev => prev.filter(r => r.id !== rideId));
+      setIsSuccess(true);
+      setSuccessMessage("Left ride successfully.");
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err?.message || "Unable to leave ride.");
+    } finally {
+      setUpdating(prev => ({ ...prev, [`leave-${rideId}`]: false }));
+    }
+  };
+
+  const becomeDriver = async (rideId: number) => {
+    try {
+      setUpdating(prev => ({ ...prev, [`driver-${rideId}`]: true }));
+      const res = await fetch("/api/rides/setridedriver", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rideId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to become driver");
+      setUserRides(prev => prev.map(r => r.id === rideId ? { ...r, driverID: user?.id } : r));
+      setIsSuccess(true);
+      setSuccessMessage("You are now the driver.");
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err?.message || "Unable to set driver.");
+    } finally {
+      setUpdating(prev => ({ ...prev, [`driver-${rideId}`]: false }));
+    }
+  };
+
+  const setStarted = async (rideId: number) => {
+    try {
+      setUpdating(prev => ({ ...prev, [`start-${rideId}`]: true }));
+      const res = await fetch("/api/rides/setstarted", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rideId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to set started");
+      setUserRides(prev => prev.map(r => r.id === rideId ? { ...r, startedAt: new Date() } : r));
+      setIsSuccess(true);
+      setSuccessMessage("Ride started.");
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err?.message || "Unable to start ride.");
+    } finally {
+      setUpdating(prev => ({ ...prev, [`start-${rideId}`]: false }));
+    }
+  };
+
+  const setFinished = async (rideId: number) => {
+    try {
+      setUpdating(prev => ({ ...prev, [`finish-${rideId}`]: true }));
+      const res = await fetch("/api/rides/setfinished", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rideId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to set finished");
+      setUserRides(prev => prev.map(r => r.id === rideId ? { ...r, finishedAt: new Date() } : r));
+      // setUserRides(prev => prev.filter(r => r.id !== rideId));
+      setIsSuccess(true);
+      setSuccessMessage("Ride finished.");
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err?.message || "Unable to finish ride.");
+    } finally {
+      setUpdating(prev => ({ ...prev, [`finish-${rideId}`]: false }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent, section: string) => {
     e.preventDefault();
@@ -66,10 +189,12 @@ export default function DashboardPage() {
         destinationLatLng: data?.destination_lat && data?.destination_lng ? {
           lat: data.destination_lat, lng: data.destination_lng } : undefined,
         seats: data?.seats ?? Number(seats),
-        driver_id: data?.driver_id ?? undefined,
+        driverID: data?.driver_id ?? undefined,
+        startedAt: data?.started_at ?? null,
+        finishedAt: data?.finished_at ?? null,
       };
 
-      setRides((prev) => [...prev, newRide]);
+      setUserRides((prev) => [...prev, newRide]);
 
       setPickup("");
       setDestination("");
@@ -86,6 +211,7 @@ export default function DashboardPage() {
       setUpdating(prev => ({ ...prev, [section]: false }));
     }
   };
+  
   const handleShowDestinationOnMap = async () => {
  
   };
@@ -188,7 +314,7 @@ export default function DashboardPage() {
         </h1>
 
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Left side: Request a Ride */}
+          {/* Request a Ride */}
           <form
             onSubmit={(e) => handleSubmit(e, "requestRide")}
             className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 space-y-5 shadow-lg"
@@ -286,7 +412,7 @@ export default function DashboardPage() {
             </button>
           </form>
 
-              {/* Right side: Browse Rides with map */}
+              {/* Browse Rides with map */}
               <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-lg">
               <h2 className="font-[Aboreto] text-2xl text-pink-300 mb-3">
                Browse Rides
@@ -315,6 +441,96 @@ export default function DashboardPage() {
                 Browse Rides
               </button>
             </div>
+
+        </div>
+        <div className="grid md:grid-cols-2 gap-8 mt-8">
+          {/* Current Rides */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-lg">
+            <h2 className="font-[Aboreto] text-2xl text-pink-300 mb-3">Current Rides</h2>
+            {userRides.length === 0 ? (
+              <p className="text-sm text-white/80">No current rides.</p>
+            ) : (
+              <div className="space-y-4">
+                {userRides.map((ride) => {
+                  const hasStarted = Boolean(ride.startedAt);
+                  const hasFinished = Boolean(ride.finishedAt);
+                  const isDriver = !!user?.id && ride.driverID === user?.id;
+                  const noDriver = !ride.driverID;
+                  return (
+                    <div key={ride.id} className="bg-white/5 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-white/90 text-sm"><span className="text-pink-300">Pickup:</span> {ride.pickup}</p>
+                          <p className="text-white/90 text-sm"><span className="text-pink-300">Destination:</span> {ride.destination}</p>
+                          <p className="text-white/90 text-sm"><span className="text-pink-300">Seats:</span> {ride.seats}</p>
+                        </div>
+                        <div className="text-xs text-white/60">
+                          {hasStarted ? "Started" : "Not started"}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
+                        <button
+                          type="button"
+                          onClick={() => leaveRide(ride.id)}
+                          disabled={hasStarted || updating[`leave-${ride.id}`]}
+                          className="w-full bg-white/20 text-white text-sm py-2 rounded-md hover:bg-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                        >
+                          {updating[`leave-${ride.id}`] ? "Leaving..." : "Leave ride"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => becomeDriver(ride.id)}
+                          disabled={hasStarted || !noDriver || updating[`driver-${ride.id}`]}
+                          className="w-full bg-white/20 text-white text-sm py-2 rounded-md hover:bg-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                        >
+                          {updating[`driver-${ride.id}`] ? "Setting..." : "Be Driver"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setStarted(ride.id)}
+                          disabled={hasStarted || !isDriver || updating[`start-${ride.id}`]}
+                          className="w-full bg-white/20 text-white text-sm py-2 rounded-md hover:bg-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                        >
+                          {updating[`start-${ride.id}`] ? "Starting..." : "Set Started"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setFinished(ride.id)}
+                          disabled={!isDriver || !hasStarted || hasFinished || updating[`finish-${ride.id}`]}
+                          className="w-full bg-white/20 text-white text-sm py-2 rounded-md hover:bg-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                        >
+                          {updating[`finish-${ride.id}`] ? "Finishing..." : "Set Finished"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => router.push('/rides')}
+              className="w-full mt-4 bg-linear-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition"
+            >
+              See all Rides
+            </button>
+          </div>
+
+          {/* Current Ride Messages */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-lg">
+            <h2 className="font-[Aboreto] text-2xl text-pink-300 mb-3">Current Ride Messages</h2>
+            <p className="text-sm text-white/80 mb-4">Chat with riders and drivers in your active rides.</p>
+            <button
+              type="button"
+              onClick={() => router.push('/messages')}
+              className="w-full mt-2 bg-linear-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition"
+            >
+              See all Messages
+            </button>
+          </div>
 
       </div>
     </div>
