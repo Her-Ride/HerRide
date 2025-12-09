@@ -27,6 +27,9 @@ export async function POST(req: Request) {
       .eq("id", rideId)
       .single();
 
+    
+      const isDriver = ride?.driver_id === user.id;
+
     if (rideErr) {
       return NextResponse.json({ error: rideErr.message || "Failed to load ride" }, { status: 400 });
     }
@@ -60,10 +63,22 @@ export async function POST(req: Request) {
     }
 
     // Delete ride if no one else is in it (silent error)
-    const { error: delRideErr } = await supabase
+    const { data: remainingRiders, error: ridersErr } = await supabase
+    .from("rider_rides")
+    .select("id")
+    .eq("ride_id", rideId);
+
+    if (!ridersErr) {
+    const noRidersLeft = (remainingRiders?.length ?? 0) === 0;
+    const noDriver = !ride?.driver_id || isDriver;
+
+      if (noRidersLeft && noDriver) {
+      const { error: delRideErr } = await supabase
       .from("rides")
       .delete()
       .eq("id", rideId);
+      }
+    }
 
     return NextResponse.json({ status: 200 });
   } catch (err: any) {
