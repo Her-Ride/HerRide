@@ -167,7 +167,7 @@ export default function MessagesPage() {
               <div
                 className={`${
                   msg.from === "me"
-                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                    ? "bg-linear-to-r from-purple-500 to-pink-500 text-white"
                     : "bg-white text-gray-800"
                 } p-3 rounded-2xl shadow-sm max-w-xs`}
               >
@@ -188,7 +188,7 @@ export default function MessagesPage() {
           />
           <button
             onClick={handleSend}
-            className="ml-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full hover:opacity-90 transition"
+            className="ml-3 bg-linear-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full hover:opacity-90 transition"
           >
             Send
           </button>

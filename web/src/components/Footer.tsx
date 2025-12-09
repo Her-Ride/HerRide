@@ -8,15 +8,15 @@ export default function Footer() {
         <div className="grid grid-cols-4">
 
           <div className="col-span-2">
-            <div className="flex items-center gap-[10px]">
+            <div className="flex items-center gap-2.5">
               <Image
                 src="/logo.png"
                 alt="HerRide Logo"
                 width={40}
                 height={40}
-                className="w-[40px] h-[40px] object-contain"
+                className="w-10 h-10 object-contain"
               />
-              <span className="font-[500] text-[20px] tracking-[0.5px] font-[Aboreto] text-[#4b144b]">
+              <span className="font-medium text-[20px] tracking-[0.5px] font-[Aboreto] text-[#4b144b]">
                 HerRide
               </span>
             </div>
