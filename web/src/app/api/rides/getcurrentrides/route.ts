@@ -28,7 +28,7 @@ export async function GET() {
         .from("rides")
         .select("*")
         .in("id", rideIds)
-        .is("started_at", null)
+        .is("finished_at", null)
         .order("created_at", { ascending: false });
         
       if (riderErr) {
