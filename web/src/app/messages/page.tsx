@@ -1,7 +1,52 @@
-import { Search, Car, MessageCircle } from "lucide-react";
+"use client";
+import { useState } from "react";
+import { Search, Car } from "lucide-react";
 import Image from "next/image";
 
 export default function MessagesPage() {
+  const [messages, setMessages] = useState([
+    { from: "other", text: "Hey, I’m almost at the pickup spot!" },
+  ]);
+  const [input, setInput] = useState("");
+
+  const handleSend = () => {
+    if (!input.trim()) return;
+
+    // Add your message
+    setMessages((prev) => [...prev, { from: "me", text: input }]);
+    setInput("");
+
+    // Simulate automated response
+    setTimeout(() => {
+      const lastMessage = messages[messages.length - 1]?.text.toLowerCase();
+      let autoReply = "Perfect! See you soon!";
+      if (lastMessage?.includes("perfect")) {
+        autoReply = "Great, I'm waiting by the entrance 🚗";
+      }
+      setMessages((prev) => [...prev, { from: "other", text: autoReply }]);
+    }, 1000); // 1 second delay
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSend();
+  };
+
+  // Mock previous messages data
+  const previousMessages = [
+    {
+      user: "Alex P.",
+      summary: "Campus Center → Library",
+      date: "Nov 1, 2025",
+      avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Alex&backgroundColor=transparent",
+    },
+    {
+      user: "Maria S.",
+      summary: "Dorms → Downtown",
+      date: "Oct 28, 2025",
+      avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Maria&backgroundColor=transparent",
+    },
+  ];
+
   return (
     <main className="min-h-screen bg-gray-50 flex">
       {/* --- LEFT COLUMN: Conversations --- */}
@@ -25,12 +70,14 @@ export default function MessagesPage() {
             </h3>
             <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-purple-50 cursor-pointer transition">
               <Image
-                src="https://api.dicebear.com/9.x/avataaars/svg?seed=driver"
+                src="https://api.dicebear.com/9.x/avataaars/svg?seed=Christian&backgroundColor=transparent"
                 alt="user"
                 width={40}
                 height={40}
                 className="w-10 h-10 rounded-full"
+                unoptimized
               />
+
               <div>
                 <p className="font-medium text-gray-800">Jessica R.</p>
                 <p className="text-xs text-gray-500">To Midtown • In progress</p>
@@ -38,28 +85,28 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 mt-4 mb-2">
-              Previous Rides
-            </h3>
-            {["Priya K.", "Aisha M.", "Sara T."].map((name, i) => (
-              <div
-                key={i}
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-purple-50 cursor-pointer transition"
-              >
-                <Image
-                  src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${name}`}
-                  alt={name}
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 rounded-full"
-                />
-                <div>
-                  <p className="font-medium text-gray-800">{name}</p>
-                  <p className="text-xs text-gray-500">Completed ride</p>
+          {/* Previous Messages Section */}
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-gray-500 mb-2">Previous Messages</h3>
+            <div className="space-y-2">
+              {previousMessages.map((msg, idx) => (
+                <div key={idx} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 cursor-pointer transition">
+                  <Image
+                    src={msg.avatar}
+                    alt={msg.user}
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full"
+                    unoptimized
+                  />
+                  <div>
+                    <p className="font-medium text-gray-800 text-sm">{msg.user}</p>
+                    <p className="text-xs text-gray-500">{msg.summary}</p>
+                    <p className="text-xs text-gray-400">{msg.date}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </aside>
@@ -74,21 +121,22 @@ export default function MessagesPage() {
         </div>
 
         <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
-          <div className="flex justify-start">
-            <div className="bg-white p-3 rounded-2xl shadow-sm max-w-xs">
-              <p>Hey, I’m almost at the pickup spot!</p>
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`flex ${msg.from === "me" ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`${
+                  msg.from === "me"
+                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                    : "bg-white text-gray-800"
+                } p-3 rounded-2xl shadow-sm max-w-xs`}
+              >
+                <p>{msg.text}</p>
+              </div>
             </div>
-          </div>
-          <div className="flex justify-end">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-2xl shadow-sm max-w-xs">
-              <p>Perfect! I’m waiting by the entrance 🚗</p>
-            </div>
-          </div>
-          <div className="flex justify-start">
-            <div className="bg-white p-3 rounded-2xl shadow-sm max-w-xs">
-              <p>See you soon!</p>
-            </div>
-          </div>
+          ))}
         </div>
 
         <div className="p-4 border-t bg-white flex items-center">
@@ -96,8 +144,14 @@ export default function MessagesPage() {
             type="text"
             placeholder="Type your message..."
             className="flex-1 bg-gray-100 rounded-full px-4 py-2 outline-none text-sm"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyPress}
           />
-          <button className="ml-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full hover:opacity-90 transition">
+          <button
+            onClick={handleSend}
+            className="ml-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full hover:opacity-90 transition"
+          >
             Send
           </button>
         </div>
