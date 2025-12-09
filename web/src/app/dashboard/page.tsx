@@ -58,7 +58,6 @@ export default function DashboardPage() {
       }
     };
     loadRides();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Action handlers for rides
