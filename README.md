@@ -312,22 +312,23 @@ rider_rides (
 | Method | Route | Description |
 |--------|-------|-------------|
 | POST | `/api/rides/newride` | Create a new ride |
-| GET | `/api/rides/getrides` | Get all user's rides |
-| GET | `/api/rides/getcurrentrides` | Get active rides |
+| GET | `/api/rides/getrides` | Get rides linked to the signed-in user |
+| GET | `/api/rides/getcurrentrides` | Get user's current (not finished) rides |
+| GET | `/api/rides/getavailable` | Get available rides to join (not started/finished; excludes user's rides) |
 | POST | `/api/rides/joinride` | Join an existing ride |
 | POST | `/api/rides/leaveride` | Leave a ride |
-| PUT | `/api/rides/setstarted` | Mark ride as started |
-| PUT | `/api/rides/setfinished` | Mark ride as finished |
-| PUT | `/api/rides/setridedriver` | Set ride driver |
-| DELETE | `/api/rides/removerider` | Remove a rider |
+| POST | `/api/rides/setstarted` | Mark ride as started |
+| POST | `/api/rides/setfinished` | Mark ride as finished |
+| POST | `/api/rides/setridedriver` | Set ride driver |
+| POST | `/api/rides/removerider` | Remove a rider |
 
 ### Maps Endpoints
 
 | Method | Route | Description |
 |--------|-------|-------------|
-| GET | `/api/maps/directions` | Get directions between two points |
-| GET | `/api/maps/geocode` | Convert address to coordinates |
-| GET | `/api/maps/reverse` | Convert coordinates to address |
+| POST | `/api/maps/directions` | Get directions between two points (body: `{ origin, destination, mode }`) |
+| GET | `/api/maps/geocode` | Convert address to coordinates (`?address=`) |
+| GET | `/api/maps/reverse` | Convert coordinates to address (`?lat=&lng=`) |
 | GET | `/api/maps/ping` | Health check |
 
 ### Users Endpoints
@@ -335,9 +336,9 @@ rider_rides (
 | Method | Route | Description |
 |--------|-------|-------------|
 | POST | `/api/users/newuser` | Create user profile |
-| GET | `/api/users/getuser` | Get current user details |
-| GET | `/api/users/getuserpublic` | Get public user profile |
-| PUT | `/api/users/update` | Update user profile |
+| GET | `/api/users/getuser` | Get current signed-in user's details |
+| POST | `/api/users/getuserpublic` | Get public user profile (body: `{ clerkId }`) |
+| PATCH | `/api/users/update` | Update user profile (allowed fields only) |
 
 ---
 
