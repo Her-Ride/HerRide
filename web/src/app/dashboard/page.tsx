@@ -18,8 +18,10 @@ export default function DashboardPage() {
   const [userRides, setUserRides] = useState<Ride[]>([]);
 
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
-  const [mapPickupCenter, setMapPickupCenter] = useState<LatLng | null>(null);
-  const [mapDestCenter, setMapDestCenter] = useState<LatLng | null>(null);
+  const [availableMarkers, setAvailableMarkers] = useState<(LatLng & { id: number })[]>([]);
+  const [availableRides, setAvailableRides] = useState<Ride[]>([]);
+  const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
+
 
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
   const [isLocatingPickup, setIsLocatingPickup] = useState(false);
@@ -46,7 +48,7 @@ export default function DashboardPage() {
           destination: r.destination_address ?? r.destination,
           pickupLatLng: r.pickup_lat && r.pickup_lng ? { lat: r.pickup_lat, lng: r.pickup_lng } : undefined,
           destinationLatLng: r.destination_lat && r.destination_lng ? { lat: r.destination_lat, lng: r.destination_lng } : undefined,
-          seats: r.seats,
+          seats: r.seats ? Number(r.seats) : 0,
           driverID: r.driver_id ?? undefined,
           startedAt: r.started_at ?? null,
           finishedAt: r.finished_at ?? null,
@@ -59,6 +61,65 @@ export default function DashboardPage() {
     };
     loadRides();
   }, []);
+
+  // Load all available rides to join
+  useEffect(() => {
+    const loadAvailable = async () => {
+      try {
+        const res = await fetch("/api/rides/getavailable", { method: "GET" });
+        const data = await res.json();
+        if (!res.ok) {
+          // Skip
+          console.warn("Failed to load available rides:", data?.error);
+          return;
+        }
+        const rides: Ride[] = (data?.rides ?? []).map((r: any) => ({
+          id: r.id,
+          pickup: r.pickup_address ?? "",
+          destination: r.destination_address ?? "",
+          pickupLatLng: r.pickup_lat && r.pickup_lng ? { lat: r.pickup_lat, lng: r.pickup_lng } : undefined,
+          destinationLatLng: r.destination_lat && r.destination_lng ? { lat: r.destination_lat, lng: r.destination_lng } : undefined,
+          seats: r.seats ? Number(r.seats) : 0,
+          driverID: r.driver_id ?? undefined,
+          startedAt: r.started_at ?? null,
+          finishedAt: r.finished_at ?? null,
+          createdAt: r.created_at ?? null,
+        }));
+        setAvailableRides(rides);
+        const markers: (LatLng & { id: number })[] = rides
+          .map((r) => {
+            const lat = r.destinationLatLng?.lat ?? null;
+            const lng = r.destinationLatLng?.lng ?? null;
+            if (lat !== null && lng !== null) return { lat, lng, id: r.id } as LatLng & { id: number };
+            return null;
+          })
+          .filter(Boolean) as (LatLng & { id: number })[];
+        setAvailableMarkers(markers);
+      } catch (err) {
+        console.warn("Unable to load available rides.");
+      }
+    };
+    loadAvailable();
+  }, []);
+
+  // Geocode the browse destination to move map center
+  useEffect(() => {
+    const handle = setTimeout(async () => {
+      const q = destinationBrowse.trim();
+      if (!q) return; 
+      try {
+        const res = await fetch(`/api/maps/geocode?address=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        if (!res.ok) return;
+        const result = data?.results?.[0];
+        const loc = result?.geometry?.location;
+        if (loc && typeof loc.lat === "number" && typeof loc.lng === "number") {
+          setMapCenter({ lat: loc.lat, lng: loc.lng });
+        }
+      } catch {}
+    }, 400); 
+    return () => clearTimeout(handle);
+  }, [destinationBrowse]);
 
   // Action handlers for rides
   const leaveRide = async (rideId: number) => {
@@ -164,7 +225,7 @@ export default function DashboardPage() {
         body: JSON.stringify({
           pickupAddress: pickup,
           destinationAddress: destination,
-          seats: seats ? Number(seats) : null,
+          seats: seats ? Number(seats) : 0,
           destinationLat: mapCenter?.lat ?? null,
           destinationLng: mapCenter?.lng ?? null,
           beDriver: beDriver,
@@ -188,7 +249,7 @@ export default function DashboardPage() {
           lat: data.pickup_lat, lng: data.pickup_lng } : undefined,
         destinationLatLng: data?.destination_lat && data?.destination_lng ? {
           lat: data.destination_lat, lng: data.destination_lng } : undefined,
-        seats: data?.seats ?? Number(seats),
+        seats: data?.seats ? Number(seats) : 0,
         driverID: data?.driver_id ?? undefined,
         startedAt: data?.started_at ?? null,
         finishedAt: data?.finished_at ?? null,
@@ -212,10 +273,6 @@ export default function DashboardPage() {
     }
   };
   
-  const handleShowDestinationOnMap = async () => {
- 
-  };
-
   const handleUseCurrentLocationForPickup = async () => {
     if (!navigator.geolocation) {
       setIsError(true);
@@ -267,7 +324,28 @@ export default function DashboardPage() {
     }
   };
 
-
+  // Handle joining the  selected ride
+  const handleJoinSelectedRide = async () => {
+    if (!selectedRide) return;
+    try {
+      setUpdating((prev) => ({ ...prev, [`join-${selectedRide.id}`]: true }));
+      const res = await fetch("/api/rides/joinride", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rideId: selectedRide.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to join ride");
+      setIsSuccess(true);
+      setSuccessMessage("Joined ride successfully.");
+      setUserRides((prev) => [...prev, selectedRide]);
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err?.message || "Unable to join ride.");
+    } finally {
+      setUpdating((prev) => ({ ...prev, [`join-${selectedRide.id}`]: false }));
+    }
+  };
 
   return (
     <div
@@ -426,16 +504,38 @@ export default function DashboardPage() {
                 onChange={(e) => setDestinationBrowse(e.target.value)}
               />
 
-              <button
-                type="button"
-                onClick={handleShowDestinationOnMap}
-                className="w-full mb-4 bg-white/20 text-white text-sm py-2 rounded-md hover:bg-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition"
-              >
-                Show destination on map
-              </button>
-
               {/* Map area */}
-              <Map center={mapCenter || undefined} />
+              <Map
+                center={mapCenter || undefined}
+                markers={availableMarkers}
+                onMarkerClick={(m) => {
+                  const ride = availableRides.find((r) => r.id === m.id);
+                  if (ride) setSelectedRide(ride);
+                }}
+              />
+
+              {/* Selected ride details  */}
+              {selectedRide && (
+                <div className="mt-4 bg-white/5 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white/90 text-sm"><span className="text-pink-300">Pickup:</span> {selectedRide.pickup || "Unknown"}</p>
+                      <p className="text-white/90 text-sm"><span className="text-pink-300">Destination:</span> {selectedRide.destination || "Unknown"}</p>
+                      <p className="text-white/90 text-sm"><span className="text-pink-300">Seats:</span> {selectedRide.seats}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={handleJoinSelectedRide}
+                      disabled={updating[`join-${selectedRide.id}`]}
+                      className="w-full bg-white/20 text-white text-sm py-2 rounded-md hover:bg-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                    >
+                      {updating[`join-${selectedRide.id}`] ? "Joining..." : "Join ride"}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <button className="w-full mt-4 bg-linear-to-r from-purple-600 to-pink-400 text-white py-2 rounded-md font-[Aboreto] hover:opacity-90 transition">
                 Browse Rides
@@ -465,7 +565,11 @@ export default function DashboardPage() {
                           <p className="text-white/90 text-sm"><span className="text-pink-300">Seats:</span> {ride.seats}</p>
                         </div>
                         <div className="text-xs text-white/60">
-                          {hasStarted ? "Started" : "Not started"}
+                          {hasFinished
+                            ? "Finished"
+                            : hasStarted
+                            ? "Started"
+                            : "Not Started"}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">

@@ -2,15 +2,14 @@
 
 import React from "react";
 import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
+import { LatLng } from "@/lib/types";
 
-type LatLng = {
-  lat: number;
-  lng: number;
-};
-
+type MapMarker = LatLng & { id?: number };
 type MapProps = {
   center?: LatLng;
   zoom?: number;
+  markers?: MapMarker[];
+  onMarkerClick?: (marker: MapMarker, index: number) => void;
 };
 
 const defaultCenter: LatLng = {
@@ -18,7 +17,7 @@ const defaultCenter: LatLng = {
   lng: -73.935242,
 };
 
-export default function Map({ center = defaultCenter, zoom = 12 }: MapProps) {
+export default function Map({ center = defaultCenter, zoom = 12, markers = [], onMarkerClick }: MapProps) {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries: ["places"],
@@ -43,7 +42,15 @@ export default function Map({ center = defaultCenter, zoom = 12 }: MapProps) {
           zoomControl: true,
         }}
       >
-        <Marker position={center} />
+        {/* Show markers for available rides*/}
+        {markers.length > 0 &&
+          markers.map((m, idx) => (
+            <Marker
+              key={`${m.id ?? 'mk'}-${m.lat}-${m.lng}-${idx}`}
+              position={{ lat: m.lat, lng: m.lng }}
+              onClick={() => onMarkerClick?.(m, idx)}
+            />
+          ))}
       </GoogleMap>
     </div>
   );

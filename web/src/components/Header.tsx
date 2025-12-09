@@ -4,8 +4,8 @@ import { UserButton, SignUpButton} from "@clerk/nextjs";
 
 export default function Header( { isSignedIn = false }: { isSignedIn: boolean } ) {
   return (
-    <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center py-[15px] px-6 md:px-[40px] bg-white/85 backdrop-blur-sm">
-      <div className="flex items-center gap-[10px]">
+    <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center py-[15px] px-6 md:px-10 bg-white/85 backdrop-blur-sm">
+      <div className="flex items-center gap-2.5">
         <Link href="/" className="block">
           <Image
             src="/logo.png"
@@ -18,7 +18,7 @@ export default function Header( { isSignedIn = false }: { isSignedIn: boolean } 
         </Link>
         <Link
           href="/"
-          className="font-[500] text-[22px] tracking-[0.5px] font-[Aboreto] text-black no-underline"
+          className="font-medium text-[22px] tracking-[0.5px] font-[Aboreto] text-black no-underline"
         >
           HerRide
         </Link>
@@ -28,19 +28,19 @@ export default function Header( { isSignedIn = false }: { isSignedIn: boolean } 
           <nav className="flex items-center flex-wrap">
             <Link
               href="/dashboard"
-              className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
+              className="mx-[15px] my-1 font-medium text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
             >
               Dashboard
             </Link>
             <Link
               href="/rides"
-              className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
+              className="mx-[15px] my-1 font-medium text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
             >
               My Rides
             </Link>
             <Link
               href="/messages"
-              className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
+              className="mx-[15px] my-1 font-medium text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
             >
               Messages
             </Link>
@@ -61,13 +61,13 @@ export default function Header( { isSignedIn = false }: { isSignedIn: boolean } 
           <nav className="flex items-center flex-wrap">
             <Link
               href="/login"
-              className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
+              className="mx-[15px] my-1 font-medium text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]"
             >
               Log In
             </Link>
 
             <SignUpButton>
-              <button className="mx-[15px] my-1 font-[500] text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]">
+              <button className="mx-[15px] my-1 font-medium text-black hover:text-[#4b144b] transition-colors duration-200 font-[Aboreto]">
                 Sign Up
               </button>
             </SignUpButton>
