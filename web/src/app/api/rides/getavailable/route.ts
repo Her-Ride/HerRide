@@ -17,7 +17,7 @@ export async function GET() {
       .eq("rider_id", user.id);
 
     if (linksErr) {
-      return NextResponse.json({ error: linksErr.message }, { status: 500 });
+      return NextResponse.json({ error: ("1"+linksErr.message) }, { status: 500 });
     }
 
     const excludeIds = (userRideLinks ?? []).map((r) => r.ride_id);
@@ -30,7 +30,7 @@ export async function GET() {
       .is("started_at", null)
       .is("finished_at", null)
       // exclude rides where the user is already a rider
-      .not("id", "in", excludeIds.length ? `(${excludeIds.join(",")})` : "(NULL)")
+      .not("id", "in", excludeIds.length ? `(${excludeIds.join(",")})` : "(0)")
       .order("created_at", { ascending: false });
 
     if (error) {
