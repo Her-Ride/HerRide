@@ -16,13 +16,14 @@ export default function RidesPage() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchRides = async () => {
       try {
         const res = await fetch("/api/rides/getrides");
 
-        const text = await res.text(); // 👈 read raw text first
+        const text = await res.text(); // read raw text first
 
         if (!text) {
           throw new Error("Empty response from /api/rides");
@@ -50,6 +51,34 @@ export default function RidesPage() {
 
     fetchRides();
   }, []);
+
+  const handleLeaveOrCancel = async (rideId: number) => {
+    try {
+      setActionLoadingId(rideId);
+
+      const res = await fetch("/api/rides/leaveride", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rideId }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        console.error("Leave/Cancel failed:", data);
+        alert(data.error || "Failed to leave/cancel ride");
+        return;
+      }
+
+      // remove the ride from UI
+      setRides((prev) => prev.filter((r) => r.id !== rideId));
+    } catch (err: any) {
+      console.error("Error leaving/cancelling ride:", err);
+      alert(err?.message || "Something went wrong");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -140,6 +169,15 @@ export default function RidesPage() {
                     <strong>Seats:</strong> {ride.seats}
                   </p>
                 )}
+                <button
+                  onClick={() => handleLeaveOrCancel(ride.id)}
+                  disabled={actionLoadingId === ride.id}
+                  className="mt-3 inline-flex items-center rounded-md bg-red-500 px-3 py-1 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                >
+                  {actionLoadingId === ride.id ? "Processing..." : "Leave/Cancel Ride"}
+
+                </button>
+
               </div>
             ))}
           </div>
