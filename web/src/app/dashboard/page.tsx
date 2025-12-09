@@ -212,10 +212,6 @@ export default function DashboardPage() {
     }
   };
   
-  const handleShowDestinationOnMap = async () => {
- 
-  };
-
   const handleUseCurrentLocationForPickup = async () => {
     if (!navigator.geolocation) {
       setIsError(true);
@@ -425,14 +421,6 @@ export default function DashboardPage() {
                 value={destinationBrowse}
                 onChange={(e) => setDestinationBrowse(e.target.value)}
               />
-
-              <button
-                type="button"
-                onClick={handleShowDestinationOnMap}
-                className="w-full mb-4 bg-white/20 text-white text-sm py-2 rounded-md hover:bg-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition"
-              >
-                Show destination on map
-              </button>
 
               {/* Map area */}
               <Map center={mapCenter || undefined} />
