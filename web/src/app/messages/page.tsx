@@ -1,13 +1,51 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Car } from "lucide-react";
 import Image from "next/image";
 
+type CurrentRide = {
+  id: number;
+  pickup_address: string | null;
+  destination_address: string | null;
+  seats: number | null;
+  created_at: string;
+};
+
 export default function MessagesPage() {
   const [messages, setMessages] = useState([
-    { from: "other", text: "Hey, I’m almost at the pickup spot!" },
+    { from: "other", text: "Hey, I'm almost at the pickup spot!" },
   ]);
   const [input, setInput] = useState("");
+  const [currentRide, setCurrentRide] = useState<CurrentRide | null>(null);
+  const [rideLoading, setRideLoading] = useState(true);
+
+  // Fetch current ride on mount
+  useEffect(() => {
+    const fetchCurrentRide = async () => {
+      try {
+        const res = await fetch("/api/rides/getcurrentrides", { method: "GET" });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          console.error("Failed to load current rides:", data?.error);
+          setRideLoading(false);
+          return;
+        }
+
+        // Get the first ongoing ride (or first ride if no started status is tracked)
+        const rides = Array.isArray(data.rides) ? data.rides : (Array.isArray(data) ? data : []);
+        if (rides.length > 0) {
+          setCurrentRide(rides[0]);
+        }
+      } catch (err) {
+        console.error("Error loading current ride:", err);
+      } finally {
+        setRideLoading(false);
+      }
+    };
+
+    fetchCurrentRide();
+  }, []);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -163,21 +201,32 @@ export default function MessagesPage() {
           <Car className="w-5 h-5 text-purple-500 mr-2" />
           Ride Details
         </h2>
-        <div className="space-y-2 text-sm text-gray-600">
-          <p>
-            <strong>Pickup:</strong> Campus Center
-          </p>
-          <p>
-            <strong>Destination:</strong> Midtown
-          </p>
-          <p>
-            <strong>Date:</strong> Nov 3, 2025
-          </p>
-          <p>
-            <strong>Status:</strong>{" "}
-            <span className="text-green-600 font-medium">In Progress</span>
-          </p>
-        </div>
+        {rideLoading ? (
+          <p className="text-sm text-gray-500">Loading ride details...</p>
+        ) : currentRide ? (
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>
+              <strong>Pickup:</strong> {currentRide.pickup_address || "Unknown"}
+            </p>
+            <p>
+              <strong>Destination:</strong> {currentRide.destination_address || "Unknown"}
+            </p>
+            <p>
+              <strong>Date:</strong> {new Date(currentRide.created_at).toLocaleDateString()}
+            </p>
+            {currentRide.seats !== null && (
+              <p>
+                <strong>Seats:</strong> {currentRide.seats}
+              </p>
+            )}
+            <p>
+              <strong>Status:</strong>{" "}
+              <span className="text-green-600 font-medium">In Progress</span>
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No active ride</p>
+        )}
       </aside>
     </main>
   );
